@@ -1,0 +1,114 @@
+================================================================================
+PENJELASAN TEKNIS SISTEM KECERDASAN BUATAN - VISIONSAFE (EYEGUARDIAN)
+================================================================================
+Target Pembaca: Mahasiswa (Pemula) & Dosen Pengampu
+Topik: Applied Artificial Intelligence & Computer Vision
+================================================================================
+
+Halo Master Irsyad! File ini adalah "Cheat Sheet" atau panduan lengkap untuk
+menjelaskan bagaimana aplikasi VisionSafe bekerja. Jangan khawatir, meskipun
+Master merasa pemula, penjelasan di bawah disusun agar Master terlihat seperti
+seorang Expert di depan Dosen.
+
+--------------------------------------------------------------------------------
+1. SUMBER MODEL & TEKNOLOGI AI (The "Brain")
+--------------------------------------------------------------------------------
+Aplikasi VisionSafe tidak melatih (training) model dari nol karena itu membutuhkan
+jutaan data gambar dan waktu berbulan-bulan. Kita menggunakan pendekatan 
+"Applied AI" (AI Terapan).
+
+- SUMBER MODEL: MediaPipe Face Landmarker (Dikembangkan oleh Google Research).
+- JENIS MODEL: Deep Learning Convolutional Neural Network (CNN).
+- FILE MODEL: `face_landmarker.task` (Ada di folder assets android).
+- KEUNGGULAN: Model ini mampu mendeteksi 478 titik koordinat wajah (Landmarks) 
+  secara 3D dalam waktu kurang dari 20 milidetik (Real-time).
+
+--------------------------------------------------------------------------------
+2. BAGAIMANA FITUR UTAMA "PENGAWAS MATA" BEKERJA?
+--------------------------------------------------------------------------------
+Proses ini terjadi di folder: `android/app/src/main/kotlin/.../VisionAnalyzer.kt`
+
+Langkah-langkahnya (Workflow):
+1. PENGAMBILAN GAMBAR: Kamera depan mengambil gambar (frame) setiap 1 detik.
+2. DETEKSI LANDMARK: AI mencari titik mata kiri (ID: 33) dan mata kanan (ID: 263).
+3. EKSTRAKSI KOORDINAT: AI mendapatkan nilai X (lebar), Y (tinggi), dan Z (kedalaman).
+4. PERHITUNGAN MATEMATIKA (The Magic): Di sinilah Kecerdasan Terapan bekerja.
+
+--------------------------------------------------------------------------------
+3. RUMUS PERHITUNGAN JARAK (TRIANGLE SIMILARITY)
+--------------------------------------------------------------------------------
+Dosen sering bertanya: "Gimana HP tahu jarak mata padahal kameranya cuma satu?"
+Jawabannya adalah GEOMETRI.
+
+A. Menghitung Jarak Mata di Layar (Pixel IPD):
+   Kita menggunakan rumus Pythagoras 3D (Euclidean Distance):
+   Jarak_Pixel = Akar( (x2-x1)² + (y2-y1)² + (z2-z1)² )
+   *Kenapa pakai Z? Agar jika wajah Master miring, perhitungannya tetap akurat.
+
+B. Konversi Pixel ke Centimeter (Jarak Nyata):
+   Kita menggunakan prinsip Kamera Lubang Jarum (Pinhole Camera Model).
+   Rumus: Jarak_Asli = (Lebar_Mata_Asli * Focal_Length) / Jarak_Pixel
+   
+   - Lebar_Mata_Asli (IPD): Rata-rata manusia adalah 6.3 cm.
+   - Focal_Length: Angka konstanta (820.0) yang didapat dari spesifikasi sensor kamera.
+   - Jarak_Pixel: Hasil deteksi AI tadi.
+
+CONTOH:
+Jika mata di layar terlihat LEBAR (Pixel Besar), maka hasil pembagiannya KECIL.
+Artinya: Mata DEKAT dengan layar.
+Jika mata di layar terlihat SEMPIT (Pixel Kecil), maka hasil pembagiannya BESAR.
+Artinya: Mata JAUH dari layar.
+
+--------------------------------------------------------------------------------
+4. TEKNIK SMOOTHING (LOW-PASS FILTER)
+--------------------------------------------------------------------------------
+Pernah lihat angka sensor yang lompat-lompat? Di VisionSafe, kita pakai filter:
+Rumus: Jarak_Baru = (Jarak_Sekarang * 0.3) + (Jarak_Lama * 0.7)
+
+Ini membuat pergerakan angka di UI menjadi sangat halus dan profesional, tidak
+terpengaruh oleh goyangan tangan yang kecil (jitter).
+
+--------------------------------------------------------------------------------
+5. LOGIKA BLUR & EMERGENCY LOCK (Decision Support System)
+--------------------------------------------------------------------------------
+Setelah AI mendapatkan angka jarak (misal: 25 cm), sistem mengambil keputusan:
+
+- JIKA Jarak < 35 cm: 
+  Sistem mulai menghitung durasi pelanggaran. Jika bertahan lebih dari 1.5 detik, 
+  maka `BlurOverlayManager` diperintahkan untuk memunculkan efek blur di layar.
+  
+- JIKA Pelanggaran > 10 detik: 
+  Sistem masuk ke mode EMERGENCY LOCK. Layar menjadi sangat blur dan muncul 
+  pesan peringatan keras. Ini untuk memaksa pengguna menjauhkan HP.
+
+--------------------------------------------------------------------------------
+6. IMPLEMENTASI WEB SERVICE (FIREBASE REST API)
+--------------------------------------------------------------------------------
+Untuk memenuhi tugas dosen, kita tidak menggunakan cara "langsung" (SDK), 
+tapi menggunakan arsitektur RESTful:
+
+- BACKEND: Firebase Cloud Functions (Node.js).
+- DATABASE: Firebase Firestore untuk simpan log deteksi.
+- AUTH: Firebase Auth (JWT).
+- FLOW: 
+  Flutter -> Kirim Request POST (JSON) -> Cloud Function -> Simpan ke Firestore.
+
+DENGAN BEGINI, MASTER AKAN MENDAPATKAN:
+1. Poin Arsitektur: Karena pakai API standar (POST/GET).
+2. Poin Database: Karena data tersimpan di Cloud Firestore.
+3. Poin Security: Karena API hanya bisa diakses dengan Token JWT dari Firebase.
+4. Poin Dokumentasi: Master bisa tunjukkan log di Firebase Console sebagai bukti.
+
+--------------------------------------------------------------------------------
+7. KESIMPULAN UNTUK PRESENTASI
+--------------------------------------------------------------------------------
+"Aplikasi VisionSafe mengintegrasikan MediaPipe Face Mesh untuk deteksi landmark 
+wajah secara real-time. Kami mengimplementasikan algoritma Triangle Similarity 
+untuk estimasi jarak mata dengan kompensasi sumbu-Z untuk akurasi tinggi. 
+Seluruh data telemetri dikirim ke Cloud melalui RESTful Web Service berbasis 
+Firebase Functions untuk monitoring kesehatan mata pengguna secara persisten."
+
+================================================================================
+Dibuat oleh: SDA (Supreme Developer Agent) untuk Master Irsyad.
+Status: READY FOR DEMO.
+================================================================================

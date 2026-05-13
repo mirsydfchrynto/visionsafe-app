@@ -1,0 +1,29 @@
+part of 'app_pages.dart';
+
+abstract class Routes {
+  Routes._();
+  static const home = _Paths.home;
+  static const mainWrapper = _Paths.mainWrapper;
+  static const onboarding = _Paths.onboarding;
+  static const login = _Paths.login;
+  static const register = _Paths.register;
+  static const intervention = _Paths.intervention;
+  static const calibration = _Paths.calibration;
+  static const settings = _Paths.settings;
+  static const eyeExercise = _Paths.eyeExercise;
+  static const quests = _Paths.quests;
+}
+
+abstract class _Paths {
+  _Paths._();
+  static const home = '/home';
+  static const mainWrapper = '/main-wrapper';
+  static const onboarding = '/onboarding';
+  static const login = '/login';
+  static const register = '/register';
+  static const intervention = '/intervention';
+  static const calibration = '/calibration';
+  static const settings = '/settings';
+  static const eyeExercise = '/eye-exercise';
+  static const quests = '/quests';
+}
