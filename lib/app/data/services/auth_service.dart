@@ -6,16 +6,12 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 /// Layanan Autentikasi Tingkat Enterprise.
 /// Mengintegrasikan Supabase Auth dan Google OAuth.
-/// Sesuai Standar SDA V2: Fokus pada Social Auth & Email.
 class AuthService extends GetxService {
   final SupabaseClient _supabase = Supabase.instance.client;
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
   final Logger _logger = Logger();
 
-  // Web Client ID (Wajib untuk handshake Google <-> Supabase)
   final String _webClientId = '353922058441-j4voev2ai15av984u7sgmd4ba78248b3.apps.googleusercontent.com';
-  
-  // Android Client ID (Untuk stabilitas di perangkat Android)
   final String _androidClientId = '353922058441-ljqqf9nh8rtnsjnqvl1k5oqbntsf6l5j.apps.googleusercontent.com';
 
   final isLoggedIn = false.obs;
@@ -37,11 +33,7 @@ class AuthService extends GetxService {
 
   Future<void> signIn(String email, String password) async {
     try {
-      final response = await _supabase.auth.signInWithPassword(
-        email: email,
-        password: password,
-      );
-      
+      final response = await _supabase.auth.signInWithPassword(email: email, password: password);
       if (response.user != null) {
         await _secureStorage.write(key: 'saved_email', value: email);
         _logger.i('Autentikasi Berhasil: ${response.user!.email}');
@@ -52,7 +44,6 @@ class AuthService extends GetxService {
     }
   }
 
-  /// Registrasi akun baru menggunakan kredensial email dan nama.
   Future<void> signUp(String email, String password, {String? name}) async {
     try {
       await _supabase.auth.signUp(
@@ -67,29 +58,21 @@ class AuthService extends GetxService {
     }
   }
 
-  /// NATIVE GOOGLE SIGN IN (Handshake Web & Android)
   Future<void> nativeGoogleSignIn() async {
     try {
       final GoogleSignIn googleSignIn = GoogleSignIn(
         serverClientId: _webClientId,
         clientId: _androidClientId,
       );
-      
       final googleUser = await googleSignIn.signIn();
       if (googleUser == null) return;
-
       final googleAuth = await googleUser.authentication;
-      final String? idToken = googleAuth.idToken;
-      final String? accessToken = googleAuth.accessToken;
-
-      if (idToken == null) throw 'Gagal memperoleh ID Token dari Google.';
-
+      if (googleAuth.idToken == null) throw 'Gagal memperoleh ID Token dari Google.';
       await _supabase.auth.signInWithIdToken(
         provider: OAuthProvider.google,
-        idToken: idToken,
-        accessToken: accessToken,
+        idToken: googleAuth.idToken!,
+        accessToken: googleAuth.accessToken,
       );
-      
       _logger.i('Google Login Berhasil: ${googleUser.email}');
     } catch (e) {
       _logger.e('Kesalahan Google Auth: $e');
@@ -103,4 +86,25 @@ class AuthService extends GetxService {
   }
 
   String? get currentUserId => _supabase.auth.currentUser?.id;
+  String? get accessToken => _supabase.auth.currentSession?.accessToken;
+
+  Future<void> updateProfile({required String name}) async {
+    try {
+      await _supabase.auth.updateUser(UserAttributes(data: {'full_name': name}));
+      _logger.i('Profil berhasil diupdate: $name');
+    } catch (e) {
+      _logger.e('Kesalahan update profil: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> updatePassword(String newPassword) async {
+    try {
+      await _supabase.auth.updateUser(UserAttributes(password: newPassword));
+      _logger.i('Password berhasil diupdate.');
+    } catch (e) {
+      _logger.e('Kesalahan update password: $e');
+      rethrow;
+    }
+  }
 }
