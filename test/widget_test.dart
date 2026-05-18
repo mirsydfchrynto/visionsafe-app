@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
+import 'package:visionsafe/app/data/models/telemetry_model.dart';
 import 'package:visionsafe/app/data/providers/vision_service_provider.dart';
 import 'package:visionsafe/app/presentation/modules/home/controllers/home_controller.dart';
 import 'package:visionsafe/app/presentation/modules/home/views/home_view.dart';
@@ -26,6 +27,9 @@ class MockVisionServiceProvider extends GetxService
 
   @override
   Future<void> updateThreshold(double threshold) async {}
+
+  @override
+  Stream<TelemetryModel> get telemetryStream => const Stream.empty();
 }
 
 void main() {
@@ -45,11 +49,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(const GetMaterialApp(home: HomeView()));
-
-    // Verifikasi Title (Fredoka font might not render in test, but text should match)
     expect(find.text('VISIONSAFE'), findsOneWidget);
-
-    // Verifikasi Status Awal (Mati)
     expect(find.text('VIZO SEDANG ISTIRAHAT'), findsOneWidget);
     expect(find.text('AKTIFKAN VIZO!'), findsOneWidget);
   });

@@ -16,6 +16,7 @@ import '../presentation/modules/main_wrapper/bindings/main_wrapper_binding.dart'
 import '../presentation/modules/play/views/eye_exercise_view.dart';
 import '../presentation/modules/play/bindings/eye_exercise_binding.dart';
 import '../presentation/modules/settings/views/settings_view.dart';
+import '../presentation/modules/settings/bindings/settings_binding.dart';
 import '../presentation/modules/quests/views/quests_view.dart';
 import '../presentation/modules/quests/bindings/quests_binding.dart';
 import '../presentation/modules/stats/bindings/stats_binding.dart';
@@ -38,6 +39,7 @@ class AppPages {
         StatsBinding(),
         QuestsBinding(),
         PlayBinding(),
+        SettingsBinding(),
       ],
     ),
     GetPage(
@@ -72,6 +74,7 @@ class AppPages {
     GetPage(
       name: _Paths.settings, 
       page: () => const SettingsView(),
+      binding: SettingsBinding(),
     ),
     GetPage(
       name: _Paths.eyeExercise, 
