@@ -11,13 +11,13 @@ class ProtectionStatusCard extends GetView<HomeController> {
   @override
   Widget build(BuildContext context) {
     return Obx(() => VCard(
-      color: controller.isServiceRunning.value ? AppColors.accent : Colors.white,
+      color: controller.isServiceRunning ? AppColors.secondary : Colors.white,
       child: Row(
         children: [
           Icon(
-            controller.isServiceRunning.value ? Icons.shield : Icons.shield_outlined,
+            controller.isServiceRunning ? Icons.shield : Icons.shield_outlined,
             size: 40,
-            color: controller.isServiceRunning.value ? Colors.white : AppColors.charcoal,
+            color: controller.isServiceRunning ? Colors.white : AppColors.charcoal,
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -25,15 +25,15 @@ class ProtectionStatusCard extends GetView<HomeController> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  controller.isServiceRunning.value ? "VIZO SEDANG MENJAGA" : "VIZO SEDANG ISTIRAHAT",
+                  controller.isServiceRunning ? "VIZO SEDANG MENJAGA" : "VIZO SEDANG ISTIRAHAT",
                   style: AppTextStyles.bodyBold.copyWith(
-                    color: controller.isServiceRunning.value ? Colors.white : AppColors.charcoal,
+                    color: controller.isServiceRunning ? Colors.white : AppColors.charcoal,
                   ),
                 ),
                 Text(
-                  controller.isServiceRunning.value ? "Matamu aman bersama Vizo!" : "Aktifkan untuk mulai menjaga.",
+                  controller.isServiceRunning ? "Matamu aman bersama Vizo!" : "Aktifkan untuk mulai menjaga.",
                   style: AppTextStyles.caption.copyWith(
-                    color: controller.isServiceRunning.value ? Colors.white70 : AppColors.charcoal.withAlpha(150),
+                    color: controller.isServiceRunning ? Colors.white70 : AppColors.charcoal.withAlpha(150),
                   ),
                 ),
               ],

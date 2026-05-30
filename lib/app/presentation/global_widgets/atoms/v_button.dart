@@ -1,56 +1,161 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:visionsafe/app/core/values/app_colors.dart';
 import 'package:visionsafe/app/core/values/app_text_styles.dart';
+import 'package:visionsafe/app/core/values/app_design.dart';
 
-/// VButton: Tombol utama dengan gaya 2D Hero Quest.
-class VButton extends StatelessWidget {
+/// VButton: AAA Quality Neobrutalist Button.
+/// Featuring tactile spring animations, high-contrast states, and accessibility compliance.
+class VButton extends StatefulWidget {
   final String label;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final Color color;
   final bool isLoading;
   final IconData? icon;
+  final double? width;
+  final bool enabled;
 
   const VButton({
     super.key,
     required this.label,
-    required this.onPressed,
-    this.color = const Color(0xFF0056B3), // Hero Blue
+    this.onPressed,
+    this.color = AppColors.primary,
     this.isLoading = false,
     this.icon,
+    this.width,
+    this.enabled = true,
   });
 
   @override
+  State<VButton> createState() => _VButtonState();
+}
+
+class _VButtonState extends State<VButton> with SingleTickerProviderStateMixin {
+  bool _isPressed = false;
+  late AnimationController _scaleController;
+  late Animation<double> _scaleAnimation;
+
+  bool get _isActive => widget.enabled && !widget.isLoading && widget.onPressed != null;
+
+  @override
+  void initState() {
+    super.initState();
+    _scaleController = AnimationController(
+      vsync: this,
+      duration: AppDesign.fast,
+      lowerBound: 0.0,
+      upperBound: 1.0,
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+      CurvedAnimation(parent: _scaleController, curve: Curves.easeOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _scaleController.dispose();
+    super.dispose();
+  }
+
+  void _handleTapDown(TapDownDetails details) {
+    if (_isActive) {
+      setState(() => _isPressed = true);
+      _scaleController.forward();
+    }
+  }
+
+  void _handleTapUp(TapUpDetails details) {
+    if (_isActive) {
+      setState(() => _isPressed = false);
+      _scaleController.reverse();
+      HapticFeedback.mediumImpact();
+      widget.onPressed?.call();
+    }
+  }
+
+  void _handleTapCancel() {
+    if (_isActive) {
+      setState(() => _isPressed = false);
+      _scaleController.reverse();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: isLoading ? null : onPressed,
-      child: Container(
-        height: 60,
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(30),
-          border: Border.all(color: AppColors.charcoal, width: 2.5),
-        ),
-        child: Center(
-          child: isLoading
-              ? const CircularProgressIndicator(color: Colors.white)
-              : Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (icon != null) ...[
-                      Icon(icon, color: Colors.white, size: 20),
-                      const SizedBox(width: 10),
+    final Color buttonColor = _isActive ? widget.color : AppColors.grey.withAlpha(50);
+    
+    final Color contentColor = !_isActive
+        ? AppColors.grey
+        : (buttonColor == AppColors.primary || 
+           buttonColor == AppColors.success || 
+           buttonColor == AppColors.warning || 
+           buttonColor == Colors.white)
+            ? AppColors.primaryDark
+            : Colors.white;
+
+    return Semantics(
+      button: true,
+      enabled: _isActive,
+      label: widget.label,
+      child: GestureDetector(
+        onTapDown: _handleTapDown,
+        onTapUp: _handleTapUp,
+        onTapCancel: _handleTapCancel,
+        child: ScaleTransition(
+          scale: _scaleAnimation,
+          child: AnimatedContainer(
+            duration: AppDesign.fast,
+            curve: Curves.easeOut,
+            transform: Matrix4.translationValues(
+              _isPressed ? 2.0 : 0.0, 
+              _isPressed ? 2.0 : 0.0, 
+              0.0,
+            ),
+            height: 62, 
+            width: widget.width ?? double.infinity,
+            decoration: BoxDecoration(
+              color: buttonColor,
+              borderRadius: BorderRadius.circular(AppDesign.radiusM),
+              border: Border.all(color: AppColors.primaryDark, width: AppDesign.borderWidth),
+              boxShadow: _isPressed || !_isActive
+                  ? []
+                  : [
+                      BoxShadow(
+                        color: AppColors.primaryDark,
+                        offset: const Offset(AppDesign.shadowOffsetSmall, AppDesign.shadowOffsetSmall),
+                      )
                     ],
-                    Text(
-                      label.toUpperCase(),
-                      style: AppTextStyles.bodyBold.copyWith(
-                        color: Colors.white,
-                        letterSpacing: 1.5,
-                        fontSize: 16,
+            ),
+            child: Center(
+              child: widget.isLoading
+                  ? SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: CircularProgressIndicator(
+                        color: contentColor, 
+                        strokeWidth: 3,
                       ),
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (widget.icon != null) ...[
+                          Icon(widget.icon, color: contentColor, size: 24),
+                          const SizedBox(width: AppDesign.space12),
+                        ],
+                        Text(
+                          widget.label.toUpperCase(),
+                          style: AppTextStyles.bodyBold.copyWith(
+                            color: contentColor,
+                            letterSpacing: 1.5,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+            ),
+          ),
         ),
       ),
     );

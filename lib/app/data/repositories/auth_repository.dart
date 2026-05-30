@@ -4,8 +4,8 @@ import 'package:get/get.dart';
 
 /// Repository untuk mengelola akses data autentikasi.
 /// Menjembatani antara UI/Controller dengan Data Source (AuthService/Supabase).
-class AuthRepository {
-  final AuthService _authService = Get.find<AuthService>();
+class AuthRepository extends GetxService {
+  AuthService get _authService => Get.find<AuthService>();
 
   /// Melakukan login ke sistem.
   Future<void> login(String email, String password) async {

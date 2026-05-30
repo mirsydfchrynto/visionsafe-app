@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:visionsafe/app/core/values/app_colors.dart';
+import 'package:visionsafe/app/core/values/app_text_styles.dart';
 
-/// Pemisah antara form manual dan social auth.
+/// AuthDivider: AAA Quality neobrutalist separator.
 class AuthDivider extends StatelessWidget {
   const AuthDivider({super.key});
 
@@ -8,19 +10,36 @@ class AuthDivider extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Expanded(child: Divider(color: Colors.grey.shade300, thickness: 1.5)),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            "OR",
-            style: TextStyle(
-              color: Colors.grey,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
+        Expanded(
+          child: Container(
+            height: 2, 
+            decoration: BoxDecoration(
+              color: AppColors.primaryDark.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(1),
             ),
           ),
         ),
-        Expanded(child: Divider(color: Colors.grey.shade300, thickness: 1.5)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            "OR CONTINUE WITH",
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.primaryDark.withValues(alpha: 0.4),
+              fontWeight: FontWeight.w900,
+              fontSize: 10,
+              letterSpacing: 1.2,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Container(
+            height: 2, 
+            decoration: BoxDecoration(
+              color: AppColors.primaryDark.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(1),
+            ),
+          ),
+        ),
       ],
     );
   }

@@ -30,14 +30,17 @@ class QuestTaskTile extends GetView<QuestsController> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      quest['title'],
+                      quest['title'] ?? '',
                       style: AppTextStyles.bodyBold.copyWith(
-                        color: isLocked ? Colors.grey : const Color(0xFF003366),
+                        color: isLocked ? const Color(0xFF9E9E9E) : const Color(0xFF003366),
                       ),
                     ),
                     Text(
-                      quest['subtitle'],
-                      style: AppTextStyles.caption.copyWith(fontSize: 11),
+                      quest['subtitle'] ?? '',
+                      style: AppTextStyles.caption.copyWith(
+                        fontSize: 11,
+                        color: isLocked ? const Color(0xFFAAAAAA) : AppColors.grey,
+                      ),
                     ),
                   ],
                 ),
@@ -64,7 +67,7 @@ class QuestTaskTile extends GetView<QuestsController> {
         border: Border.all(color: const Color(0xFF003366), width: 2),
       ),
       child: Icon(
-        quest['icon'],
+        quest['icon'] as IconData? ?? Icons.task_alt_rounded,
         color: isLocked ? Colors.grey : (isCompleted ? Colors.blue.shade800 : Colors.orange.shade800),
         size: 20,
       ),
@@ -73,16 +76,17 @@ class QuestTaskTile extends GetView<QuestsController> {
 
   Widget _buildStartButton() {
     return SizedBox(
-      height: 30,
+      height: 32,
+      width: 80, // Fixed width for uniform alignment
       child: ElevatedButton(
         onPressed: () => controller.startTask(quest['id']),
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          padding: EdgeInsets.zero,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           elevation: 0,
         ),
-        child: const Text("START", style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900)),
+        child: const Text("START", style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
       ),
     );
   }

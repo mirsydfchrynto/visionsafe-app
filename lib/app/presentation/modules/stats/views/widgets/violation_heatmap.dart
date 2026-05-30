@@ -55,19 +55,19 @@ class ViolationHeatmap extends GetView<StatsController> {
     return Container(
       width: size,
       height: size,
+      alignment: Alignment.center, // Strict centering
       decoration: BoxDecoration(
         color: boxColor,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.charcoal.withAlpha(30), width: 1),
       ),
-      child: Center(
-        child: Text(
-          "$hour",
-          style: AppTextStyles.caption.copyWith(
-            fontSize: 9,
-            fontWeight: FontWeight.w900,
-            color: intensity > 0.5 ? Colors.white : AppColors.charcoal.withAlpha(150),
-          ),
+      child: Text(
+        "$hour",
+        style: AppTextStyles.caption.copyWith(
+          fontSize: 9,
+          fontWeight: FontWeight.w900,
+          color: intensity > 0.5 ? Colors.white : AppColors.charcoal.withAlpha(150),
+          height: 1.0, // Prevent line height shift
         ),
       ),
     );

@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/auth_controller.dart';
@@ -6,60 +7,83 @@ import 'package:visionsafe/app/presentation/global_widgets/atoms/v_input.dart';
 import 'package:visionsafe/app/presentation/global_widgets/molecules/auth/auth_divider.dart';
 import 'package:visionsafe/app/presentation/global_widgets/molecules/auth/auth_social_section.dart';
 import 'package:visionsafe/app/core/values/app_text_styles.dart';
+import 'package:visionsafe/app/core/values/app_design.dart';
+import 'package:visionsafe/app/core/values/app_colors.dart';
+import 'package:visionsafe/app/presentation/global_widgets/animations/fade_in_up.dart';
 
-/// Kartu form login (Hero Quest Style).
-import 'dart:ui';
-
+/// LoginFormCard: Elite Hero Quest Auth Card.
 class LoginFormCard extends GetView<AuthController> {
   const LoginFormCard({super.key});
 
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(48),
+      borderRadius: BorderRadius.circular(AppDesign.radiusL),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 32),
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: AnimatedContainer(
+          duration: AppDesign.slow,
+          curve: AppDesign.smoothCurve,
+          padding: const EdgeInsets.all(AppDesign.space24),
           decoration: BoxDecoration(
-            color: Colors.white.withAlpha(180), // Glassmorphism Effect
-            borderRadius: BorderRadius.circular(48),
-            border: Border.all(color: const Color(0xFF003366), width: 3), // Bold Retro Border
-            boxShadow: [
-              BoxShadow(color: Colors.black.withAlpha(20), blurRadius: 20, offset: const Offset(0, 10))
-            ],
+            color: Colors.white.withValues(alpha: 0.82), 
+            borderRadius: BorderRadius.circular(AppDesign.radiusL),
+            border: Border.all(
+              color: AppColors.primaryDark.withValues(alpha: 0.1), 
+              width: 1.5,
+            ),
+            boxShadow: AppDesign.premiumShadow,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               _buildHeading(),
-              const SizedBox(height: 24),
-              VInput(
-                hint: "Username/Email",
-                prefixIcon: Icons.person_outline_rounded,
-                controller: controller.emailController,
-                keyboardType: TextInputType.emailAddress,
+              const SizedBox(height: AppDesign.space32),
+              
+              FadeInUp(
+                delay: const Duration(milliseconds: 200),
+                child: VInput(
+                  hint: "Username/Email",
+                  prefixIcon: Icons.alternate_email_rounded,
+                  controller: controller.emailController,
+                  keyboardType: TextInputType.emailAddress,
+                ),
               ),
-              const SizedBox(height: 12),
-              VInput(
-                hint: "Password",
-                prefixIcon: Icons.lock_outline_rounded,
-                isPassword: true,
-                controller: controller.passwordController,
+              
+              const SizedBox(height: AppDesign.space16),
+              
+              FadeInUp(
+                delay: const Duration(milliseconds: 350),
+                child: VInput(
+                  hint: "Password",
+                  prefixIcon: Icons.lock_person_rounded,
+                  isPassword: true,
+                  controller: controller.passwordController,
+                ),
               ),
+              
               _buildForgotPassword(),
-              const SizedBox(height: 24),
-              Obx(() => VButton(
-                label: "LET'S GO!",
-                icon: Icons.bolt_rounded,
-                isLoading: controller.isLoading.value,
-                onPressed: () => controller.login(),
-              )),
-              const SizedBox(height: 20),
-              const AuthDivider(),
-              const SizedBox(height: 20),
-              AuthSocialSection(
-                onGoogleTap: () => controller.loginWithGoogle(),
+              const SizedBox(height: AppDesign.space32),
+              
+              FadeInUp(
+                delay: const Duration(milliseconds: 500),
+                child: Obx(() => VButton(
+                  label: "LET'S GO!",
+                  icon: Icons.bolt_rounded,
+                  isLoading: controller.isLoading.value,
+                  onPressed: () => controller.login(),
+                )),
+              ),
+              
+              const SizedBox(height: AppDesign.space24),
+              const FadeInUp(delay: Duration(milliseconds: 600), child: AuthDivider()),
+              const SizedBox(height: AppDesign.space24),
+              
+              FadeInUp(
+                delay: const Duration(milliseconds: 700),
+                child: AuthSocialSection(
+                  onGoogleTap: () => controller.loginWithGoogle(),
+                ),
               ),
             ],
           ),
@@ -75,18 +99,18 @@ class LoginFormCard extends GetView<AuthController> {
           "Welcome Back, Hero!",
           textAlign: TextAlign.center,
           style: AppTextStyles.heading1.copyWith(
-            color: const Color(0xFF003366),
-            fontSize: 24,
+            color: AppColors.primaryDark,
+            fontSize: 22,
             fontWeight: FontWeight.w900,
             letterSpacing: -0.5,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: AppDesign.space4),
         Text(
           "Log in to keep your eyes safe.",
           style: AppTextStyles.caption.copyWith(
-            color: const Color(0xFF003366).withAlpha(180), 
-            fontWeight: FontWeight.w600,
+            color: AppColors.primaryDark.withValues(alpha: 0.6), 
+            fontWeight: FontWeight.w700,
           ),
         ),
       ],
@@ -97,15 +121,16 @@ class LoginFormCard extends GetView<AuthController> {
     return Align(
       alignment: Alignment.centerRight,
       child: Padding(
-        padding: const EdgeInsets.only(top: 12),
+        padding: const EdgeInsets.only(top: AppDesign.space12),
         child: GestureDetector(
           onTap: () {},
-          child: const Text(
+          child: Text(
             "Forgot Password?",
-            style: TextStyle(
-              color: Color(0xFF0056B3),
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.primary,
+              fontWeight: FontWeight.w900,
+              fontSize: 11,
+              letterSpacing: 0.5,
             ),
           ),
         ),

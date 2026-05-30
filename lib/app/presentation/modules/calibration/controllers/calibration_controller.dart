@@ -1,5 +1,4 @@
 import 'package:camera/camera.dart';
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:logger/logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -7,6 +6,8 @@ import 'package:visionsafe/app/data/services/telemetry_service.dart';
 import 'package:visionsafe/app/data/services/config_service.dart';
 import 'package:visionsafe/app/data/providers/vision_service_provider.dart';
 import 'package:visionsafe/app/data/services/reward_service.dart';
+import 'package:visionsafe/app/presentation/global_widgets/molecules/v_toast.dart';
+import 'package:visionsafe/app/presentation/global_widgets/molecules/vizo_mascot.dart';
 
 class CalibrationController extends GetxController {
   final telemetryService = Get.find<TelemetryService>();
@@ -37,9 +38,10 @@ class CalibrationController extends GetxController {
       final cameras = await availableCameras();
       final frontCamera = cameras.firstWhere((c) => c.lensDirection == CameraLensDirection.front);
       
-      cameraController = CameraController(frontCamera, ResolutionPreset.medium, enableAudio: false);
-      await cameraController!.initialize();
-      update(); // Refresh UI for CameraPreview
+      final ctrl = CameraController(frontCamera, ResolutionPreset.medium, enableAudio: false);
+      cameraController = ctrl;
+      await ctrl.initialize();
+      if (!isClosed) update(); // Refresh UI only if active
     } catch (e) {
       _logger.e("Gagal inisialisasi kamera preview: $e");
     }
@@ -47,7 +49,7 @@ class CalibrationController extends GetxController {
 
   Future<void> _startCalibrationEngine() async {
     final isRunning = await _visionProvider.isServiceRunning();
-    if (!isRunning) {
+    if (!isRunning && !isClosed) {
       await _visionProvider.startService();
     }
   }
@@ -55,16 +57,17 @@ class CalibrationController extends GetxController {
   /// Menyimpan hasil kalibrasi ke Lokal (Hive) dan Cloud (Supabase).
   Future<void> saveCalibration() async {
     if (currentDistance.value < 30.0) {
-      Get.snackbar("Aduh!", "Jarak minimal 30 cm ya Hero!");
+      VToast.show("Aduh!", "Jarak minimal 30 cm ya Hero!", state: VizoState.worried);
       return;
     }
 
+    if (isSaving.value) return;
     isSaving.value = true;
     try {
       final double newThreshold = currentDistance.value;
 
       // 1. Simpan ke Hive (Offline First)
-      await _configService.setThreshold(newThreshold);
+      _configService.updateThreshold(newThreshold);
       
       // 2. Simpan ke Supabase (Cloud Sync)
       final user = _supabase.auth.currentUser;
@@ -80,19 +83,20 @@ class CalibrationController extends GetxController {
       // 3. Update Native Service
       await _visionProvider.updateThreshold(newThreshold);
       
-      _rewardService.unlockSticker('s3');
+      // Unlock achievement: Calibration Master
+      await _rewardService.unlockSticker('s3');
 
-      Get.back();
-      Get.snackbar(
+      if (!isClosed) Get.back();
+      VToast.show(
         "Berhasil!",
         "Jarak aman matamu sekarang: ${newThreshold.toInt()} cm.",
-        backgroundColor: Colors.green.withAlpha(50),
+        state: VizoState.happy,
       );
     } catch (e) {
       _logger.e("Gagal sinkronisasi kalibrasi: $e");
-      Get.snackbar("Error", "Gagal menyimpan ke cloud, tapi tetap tersimpan di HP.");
+      VToast.show("Error", "Gagal menyimpan ke cloud, tapi tetap tersimpan di HP.", state: VizoState.intervention);
     } finally {
-      isSaving.value = false;
+      if (!isClosed) isSaving.value = false;
     }
   }
 

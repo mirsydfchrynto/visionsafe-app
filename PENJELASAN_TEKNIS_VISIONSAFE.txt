@@ -82,22 +82,28 @@ Setelah AI mendapatkan angka jarak (misal: 25 cm), sistem mengambil keputusan:
   pesan peringatan keras. Ini untuk memaksa pengguna menjauhkan HP.
 
 --------------------------------------------------------------------------------
-6. IMPLEMENTASI WEB SERVICE (FIREBASE REST API)
+6. IMPLEMENTASI WEB SERVICE (SUPABASE CLOUD)
 --------------------------------------------------------------------------------
-Untuk memenuhi tugas dosen, kita tidak menggunakan cara "langsung" (SDK), 
-tapi menggunakan arsitektur RESTful:
+Aplikasi VisionSafe menggunakan arsitektur Cloud-First yang modern dengan 
+Supabase sebagai backend utama:
 
-- BACKEND: Firebase Cloud Functions (Node.js).
-- DATABASE: Firebase Firestore untuk simpan log deteksi.
-- AUTH: Firebase Auth (JWT).
+- BACKEND: Supabase (PostgreSQL Engine).
+- DATABASE: PostgreSQL dengan Row Level Security (RLS) untuk keamanan data.
+- AUTH: Supabase Auth (Email & Google OAuth).
 - FLOW: 
-  Flutter -> Kirim Request POST (JSON) -> Cloud Function -> Simpan ke Firestore.
+  Flutter -> Supabase SDK -> Batch Insert ke Tabel `telemetry`.
+- AUTOMATION: Database Triggers (PL/pgSQL) digunakan untuk menghitung XP, 
+  Level, dan durasi fokus secara otomatis di sisi server setiap kali data 
+  telemetri masuk.
 
-DENGAN BEGINI, MASTER AKAN MENDAPATKAN:
-1. Poin Arsitektur: Karena pakai API standar (POST/GET).
-2. Poin Database: Karena data tersimpan di Cloud Firestore.
-3. Poin Security: Karena API hanya bisa diakses dengan Token JWT dari Firebase.
-4. Poin Dokumentasi: Master bisa tunjukkan log di Firebase Console sebagai bukti.
+KEUNGGULAN ARSITEKTUR INI:
+1. DATA INTEGRITY: Semua perhitungan statistik (XP/Level) dilakukan di server, 
+   mencegah manipulasi data di sisi aplikasi.
+2. SECURITY: Row Level Security memastikan user HANYA bisa membaca dan menulis 
+   data mereka sendiri.
+3. REAL-TIME: Perubahan XP dan Level bisa langsung didengar oleh aplikasi 
+   mengalui Realtime Channels.
+4. SCALABILITY: Database PostgreSQL siap menangani jutaan data telemetri.
 
 --------------------------------------------------------------------------------
 7. KESIMPULAN UNTUK PRESENTASI

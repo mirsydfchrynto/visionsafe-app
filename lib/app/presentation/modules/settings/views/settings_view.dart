@@ -7,8 +7,13 @@ import 'package:visionsafe/app/data/services/auth_service.dart';
 import 'package:visionsafe/app/routes/app_pages.dart';
 import 'widgets/settings_tile.dart';
 import 'widgets/settings_section.dart';
+import 'dialogs/edit_profile_dialog.dart';
+import 'dialogs/change_password_dialog.dart';
+import 'dialogs/distance_setter_dialog.dart';
+import 'package:visionsafe/app/presentation/global_widgets/templates/base_screen_template.dart';
 
 /// View Pengaturan Utama (Elite Professional Version).
+/// File length strictly < 200 lines.
 class SettingsView extends StatelessWidget {
   const SettingsView({super.key});
 
@@ -17,61 +22,59 @@ class SettingsView extends StatelessWidget {
     final config = Get.find<ConfigService>();
     final auth = Get.find<AuthService>();
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return BaseScreenTemplate(
       appBar: AppBar(
-        title: Text('PENGATURAN', style: AppTextStyles.heading2),
+        title: Text('PENGATURAN', style: AppTextStyles.heading2.copyWith(color: AppColors.primaryDark)),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
+        automaticallyImplyLeading: false,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SettingsSection(title: "PROFIL & KEAMANAN"),
-            SettingsTile(
-              icon: Icons.person_outline_rounded,
-              title: "Edit Profil",
-              subtitle: auth.currentUser.value?.email ?? "User Hero",
-              onTap: () => _showEditProfileDialog(auth),
-              trailing: const Icon(Icons.chevron_right),
-            ),
-            const SizedBox(height: 12),
-            SettingsTile(
-              icon: Icons.lock_reset_rounded,
-              title: "Ganti Password",
-              subtitle: "Perbarui kunci keamanan akunmu.",
-              onTap: () => _showChangePasswordDialog(auth),
-              trailing: const Icon(Icons.chevron_right),
-            ),
-            const SizedBox(height: 24),
+      bottomPadding: 140,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SettingsSection(title: "PROFIL & KEAMANAN"),
+          Obx(() => SettingsTile(
+            icon: Icons.person_outline_rounded,
+            title: "Edit Profil",
+            subtitle: auth.currentUser.value?.email ?? "User Hero",
+            onTap: () => EditProfileDialog.show(auth),
+            trailing: const Icon(Icons.chevron_right, color: AppColors.primaryDark),
+          )),
+          const SizedBox(height: 12),
+          SettingsTile(
+            icon: Icons.lock_reset_rounded,
+            title: "Ganti Password",
+            subtitle: "Perbarui kunci keamanan akunmu.",
+            onTap: () => ChangePasswordDialog.show(auth),
+            trailing: const Icon(Icons.chevron_right, color: AppColors.primaryDark),
+          ),
+          const SizedBox(height: 24),
 
-            const SettingsSection(title: "TARGET KESEHATAN"),
-            Obx(() => SettingsTile(
-              icon: Icons.straighten_rounded,
-              title: "Batas Jarak Aman",
-              subtitle: "Saat ini: ${config.threshold.value.toInt()} CM (Klik untuk ubah)",
-              onTap: () => _showDistanceSetterDialog(config),
-              trailing: const Icon(Icons.edit_outlined, size: 20),
-            )),
-            const SizedBox(height: 24),
-            
-            const SettingsSection(title: "SISTEM & AKUN"),
-            SettingsTile(
-              icon: Icons.logout_rounded,
-              title: "Keluar Akun",
-              subtitle: "Selesaikan sesi dan keluar dari Cloud.",
-              iconBgColor: Colors.red.withAlpha(30),
-              iconColor: Colors.red,
-              onTap: () => _handleLogout(auth),
-              trailing: const Icon(Icons.exit_to_app_rounded, color: Colors.red),
-            ),
-            const SizedBox(height: 40),
-            _buildVersionInfo(),
-          ],
-        ),
+          const SettingsSection(title: "TARGET KESEHATAN"),
+          Obx(() => SettingsTile(
+            icon: Icons.straighten_rounded,
+            title: "Batas Jarak Aman",
+            subtitle: "Saat ini: ${config.threshold.value.toInt()} CM",
+            onTap: () => DistanceSetterDialog.show(config),
+            trailing: const Icon(Icons.edit_outlined, size: 20, color: AppColors.primary),
+          )),
+          const SizedBox(height: 24),
+          
+          const SettingsSection(title: "SISTEM & AKUN"),
+          SettingsTile(
+            icon: Icons.logout_rounded,
+            title: "Keluar Akun",
+            subtitle: "Selesaikan sesi dan keluar dari Cloud.",
+            iconBgColor: AppColors.danger.withAlpha(30),
+            iconColor: AppColors.danger,
+            onTap: () => _handleLogout(auth),
+            trailing: const Icon(Icons.exit_to_app_rounded, color: AppColors.danger),
+          ),
+          const SizedBox(height: 40),
+          _buildVersionInfo(),
+        ],
       ),
     );
   }
@@ -84,8 +87,8 @@ class SettingsView extends StatelessWidget {
         actions: [
           TextButton(onPressed: () => Get.back(), child: const Text("BATAL")),
           TextButton(
-            onPressed: () {
-              auth.signOut();
+            onPressed: () async {
+              await auth.signOut();
               Get.offAllNamed(Routes.login);
             },
             child: const Text("KELUAR", style: TextStyle(color: Colors.red)),
@@ -95,92 +98,13 @@ class SettingsView extends StatelessWidget {
     );
   }
 
-  void _showEditProfileDialog(AuthService auth) {
-    final nameCtrl = TextEditingController(text: auth.currentUser.value?.userMetadata?['full_name'] ?? "");
-    Get.defaultDialog(
-      title: "Edit Profil",
-      content: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: TextField(
-          controller: nameCtrl,
-          decoration: const InputDecoration(labelText: "Nama Lengkap"),
-        ),
-      ),
-      textConfirm: "SIMPAN",
-      textCancel: "BATAL",
-      confirmTextColor: Colors.white,
-      onConfirm: () async {
-        Get.back();
-        Get.snackbar("Sukses", "Profil berhasil diperbarui!");
-      },
-    );
-  }
-
-  void _showChangePasswordDialog(AuthService auth) {
-    final passCtrl = TextEditingController();
-    Get.defaultDialog(
-      title: "Ganti Password",
-      content: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: TextField(
-          controller: passCtrl,
-          obscureText: true,
-          decoration: const InputDecoration(labelText: "Password Baru"),
-        ),
-      ),
-      textConfirm: "GANTI",
-      textCancel: "BATAL",
-      confirmTextColor: Colors.white,
-      onConfirm: () async {
-        Get.back();
-        Get.snackbar("Sukses", "Password berhasil diubah!");
-      },
-    );
-  }
-
-  void _showDistanceSetterDialog(ConfigService config) {
-    final distCtrl = TextEditingController(text: config.threshold.value.toInt().toString());
-    Get.defaultDialog(
-      title: "Set Jarak Aman",
-      content: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(
-          children: [
-            TextField(
-              controller: distCtrl,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: "Jarak (CM)",
-                suffixText: "cm",
-                helperText: "Minimal 30 cm untuk perlindungan mata.",
-              ),
-            ),
-          ],
-        ),
-      ),
-      textConfirm: "SIMPAN",
-      textCancel: "BATAL",
-      confirmTextColor: Colors.white,
-      onConfirm: () async {
-        final double? val = double.tryParse(distCtrl.text);
-        if (val != null && val >= 30.0) {
-          await config.setThreshold(val);
-          Get.back();
-          Get.snackbar("Berhasil", "Batas jarak aman diupdate ke ${val.toInt()} cm.");
-        } else {
-          Get.snackbar("Gagal", "Jarak harus minimal 30 cm!");
-        }
-      },
-    );
-  }
-
   Widget _buildVersionInfo() {
     return const Center(
       child: Column(
         children: [
-          Text("VisionSafe v1.0.0 Elite", style: TextStyle(color: Colors.grey, fontSize: 12)),
+          Text("VisionSafe v1.0.0 Elite", style: TextStyle(color: Color(0xFF757575), fontSize: 12, fontWeight: FontWeight.w600)),
           SizedBox(height: 4),
-          Text("Powered by SDA Framework V2", style: TextStyle(color: Colors.grey, fontSize: 10)),
+          Text("Powered by SDA Framework V2", style: TextStyle(color: Color(0xFF9E9E9E), fontSize: 10)),
         ],
       ),
     );

@@ -25,7 +25,7 @@ class VisionService : Service(), androidx.lifecycle.LifecycleOwner {
     private lateinit var overlayManager: BlurOverlayManager
     private val cameraExecutor = Executors.newSingleThreadExecutor()
 
-    private val SAMPLING_RATE_MS = 1000L
+    private val SAMPLING_RATE_MS = 500L
     private var lastProcessedTime = 0L
     private var violationStartTime = 0L
     private var violationThresholdCm = 35.0
@@ -71,7 +71,11 @@ class VisionService : Service(), androidx.lifecycle.LifecycleOwner {
             addAction(Intent.ACTION_SCREEN_OFF)
             addAction(Intent.ACTION_SCREEN_ON)
         }
-        registerReceiver(screenStateReceiver, filter)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(screenStateReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(screenStateReceiver, filter)
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -116,27 +120,28 @@ class VisionService : Service(), androidx.lifecycle.LifecycleOwner {
         }
         lastProcessedTime = currentTime
 
-        val distance = analyzer.analyze(imageProxy)
+        val result = analyzer.analyze(imageProxy)
         // Log krusial untuk memastikan AI deteksi di background
-        if (distance != null) {
-            Log.d("VisionSafe", "AI STATUS: FACE DETECTED AT ${distance.toInt()} CM")
+        if (result != null) {
+            Log.d("VisionSafe", "AI STATUS: FACE DETECTED AT ${result.distance.toInt()} CM. Blink: ${result.isBlinking}")
         } else {
             Log.v("VisionSafe", "AI STATUS: NO FACE")
         }
         
-        handleResult(distance, currentTime)
+        handleResult(result, currentTime)
         imageProxy.close()
     }
 
-    private fun handleResult(distance: Double?, currentTime: Long) {
-        if (distance == null) {
+    private fun handleResult(result: VisionAnalyzer.AnalysisResult?, currentTime: Long) {
+        if (result == null) {
             violationStartTime = 0L
             updateOverlay(false, false)
             return
         }
 
+        val distance = result.distance
         val isViolation = distance < violationThresholdCm
-        sendTelemetry(distance, isViolation)
+        sendTelemetry(distance, isViolation, result.isBlinking)
 
         if (isViolation) {
             if (violationStartTime == 0L) violationStartTime = currentTime
@@ -155,10 +160,15 @@ class VisionService : Service(), androidx.lifecycle.LifecycleOwner {
         }
     }
 
-    private fun sendTelemetry(distance: Double, isViolation: Boolean) {
+    private fun sendTelemetry(distance: Double, isViolation: Boolean, isBlinking: Boolean) {
         MainActivity.eventSink?.let { sink ->
             android.os.Handler(android.os.Looper.getMainLooper()).post {
-                sink.success(mapOf("distance" to distance, "isViolation" to isViolation, "timestamp" to System.currentTimeMillis()))
+                sink.success(mapOf(
+                    "distance" to distance, 
+                    "isViolation" to isViolation, 
+                    "isBlinking" to isBlinking,
+                    "timestamp" to System.currentTimeMillis()
+                ))
             }
         }
     }

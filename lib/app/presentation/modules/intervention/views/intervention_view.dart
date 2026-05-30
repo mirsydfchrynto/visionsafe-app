@@ -26,7 +26,7 @@ class InterventionView extends StatelessWidget {
     return BackdropFilter(
       filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
       child: Container(
-        color: AppColors.charcoal.withValues(alpha: 0.6),
+        color: AppColors.primary.withAlpha(50),
       ),
     );
   }

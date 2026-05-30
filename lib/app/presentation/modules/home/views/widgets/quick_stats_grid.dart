@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:visionsafe/app/core/values/app_colors.dart';
 import 'package:visionsafe/app/core/values/app_text_styles.dart';
+import 'package:visionsafe/app/core/values/app_design.dart';
 import 'package:visionsafe/app/presentation/global_widgets/atoms/v_card.dart';
 import '../../controllers/home_controller.dart';
 
@@ -14,9 +15,9 @@ class QuickStatsGrid extends GetView<HomeController> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       crossAxisCount: 2,
-      crossAxisSpacing: 16,
-      mainAxisSpacing: 16,
-      childAspectRatio: 0.85, // Disesuaikan agar lebih tinggi untuk menampung sub-info
+      crossAxisSpacing: AppDesign.spaceM,
+      mainAxisSpacing: AppDesign.spaceM,
+      childAspectRatio: 0.82, // Optimized ratio
       children: [
         _buildStatItem(
           label: "SKOR MATA",
@@ -53,41 +54,48 @@ class QuickStatsGrid extends GetView<HomeController> {
     required List<Map<String, String>> subInfo,
   }) {
     return VCard(
-      padding: 16,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(label, style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w900, fontSize: 11, color: const Color(0xFF003366))),
+              Text(
+                label, 
+                style: AppTextStyles.caption.copyWith(
+                  fontWeight: FontWeight.w900, 
+                  fontSize: 10, 
+                  color: AppColors.primaryDark.withAlpha(180),
+                  letterSpacing: 1.0,
+                )
+              ),
               Icon(icon, color: color, size: 20),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppDesign.spaceS),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(value, style: AppTextStyles.heading1.copyWith(fontSize: 36, height: 1, color: const Color(0xFF003366))),
-              const SizedBox(width: 4),
+              Text(value, style: AppTextStyles.heading1.copyWith(fontSize: 32, height: 1, color: AppColors.primaryDark)),
+              const SizedBox(width: AppDesign.spaceXS),
               Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(unit, style: AppTextStyles.caption.copyWith(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
+                padding: const EdgeInsets.only(bottom: 2),
+                child: Text(unit, style: AppTextStyles.caption.copyWith(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.grey)),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          const Divider(height: 1, thickness: 1),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppDesign.spaceM),
+          Divider(height: 1, thickness: 1, color: AppColors.primaryDark.withAlpha(30)),
+          const SizedBox(height: AppDesign.spaceS),
           ...subInfo.map((info) => Padding(
-            padding: const EdgeInsets.only(bottom: 6),
+            padding: const EdgeInsets.only(bottom: 4),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(info['label'] ?? '', style: AppTextStyles.caption.copyWith(fontSize: 10, fontWeight: FontWeight.w600)),
+                Text(info['label'] ?? '', style: AppTextStyles.caption.copyWith(fontSize: 9, fontWeight: FontWeight.w600)),
                 Text(
                   info['value'] ?? info['size'] ?? '', 
-                  style: AppTextStyles.caption.copyWith(fontSize: 10, fontWeight: FontWeight.w900, color: const Color(0xFF003366)),
+                  style: AppTextStyles.caption.copyWith(fontSize: 9, fontWeight: FontWeight.w900, color: AppColors.primaryDark),
                 ),
               ],
             ),

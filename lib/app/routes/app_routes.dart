@@ -2,6 +2,7 @@ part of 'app_pages.dart';
 
 abstract class Routes {
   Routes._();
+  static const splash = _Paths.splash;
   static const home = _Paths.home;
   static const mainWrapper = _Paths.mainWrapper;
   static const onboarding = _Paths.onboarding;
@@ -12,10 +13,13 @@ abstract class Routes {
   static const settings = _Paths.settings;
   static const eyeExercise = _Paths.eyeExercise;
   static const quests = _Paths.quests;
+  static const news = _Paths.news;
+  static const newsDetail = _Paths.newsDetail;
 }
 
 abstract class _Paths {
   _Paths._();
+  static const splash = '/splash';
   static const home = '/home';
   static const mainWrapper = '/main-wrapper';
   static const onboarding = '/onboarding';
@@ -26,4 +30,6 @@ abstract class _Paths {
   static const settings = '/settings';
   static const eyeExercise = '/eye-exercise';
   static const quests = '/quests';
+  static const news = '/news';
+  static const newsDetail = '/news-detail';
 }

@@ -4,6 +4,7 @@ import 'package:visionsafe/app/presentation/modules/home/controllers/home_contro
 import 'package:visionsafe/app/core/values/app_colors.dart';
 import 'package:visionsafe/app/core/values/app_text_styles.dart';
 
+
 /// Menampilkan total durasi pelanggaran hari ini.
 class DailyAnalyticsCard extends GetView<HomeController> {
   const DailyAnalyticsCard({super.key});

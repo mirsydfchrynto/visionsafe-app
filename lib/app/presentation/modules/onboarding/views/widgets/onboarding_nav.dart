@@ -31,15 +31,18 @@ class OnboardingNav extends GetView<OnboardingController> {
         controller.pages.length,
         (index) => Obx(() => AnimatedContainer(
               duration: const Duration(milliseconds: 300),
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              height: 12,
-              width: controller.currentPage.value == index ? 24 : 12,
+              margin: const EdgeInsets.symmetric(horizontal: 8),
+              height: 14,
+              width: controller.currentPage.value == index ? 40 : 14,
               decoration: BoxDecoration(
                 color: controller.currentPage.value == index
                     ? AppColors.primary
-                    : AppColors.charcoal.withAlpha(50),
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: AppColors.charcoal, width: 2),
+                    : Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.primaryDark, width: 3),
+                boxShadow: controller.currentPage.value == index
+                    ? [const BoxShadow(color: AppColors.primaryDark, offset: Offset(3, 3))]
+                    : [],
               ),
             )),
       ),

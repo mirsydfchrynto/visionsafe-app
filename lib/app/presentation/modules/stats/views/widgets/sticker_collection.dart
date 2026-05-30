@@ -41,7 +41,7 @@ class StickerCollection extends GetView<StatsController> {
         opacity: sticker.isUnlocked ? 1.0 : 0.3,
         child: VCard(
           padding: 0,
-          color: sticker.isUnlocked ? AppColors.accent : AppColors.grey,
+          color: sticker.isUnlocked ? AppColors.secondary : AppColors.grey,
           child: Center(
             child: Icon(
               sticker.isUnlocked ? Icons.stars_rounded : Icons.lock_outline_rounded,

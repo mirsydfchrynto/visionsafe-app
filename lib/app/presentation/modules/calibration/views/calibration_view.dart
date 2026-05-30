@@ -14,7 +14,7 @@ class CalibrationView extends GetView<CalibrationController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A), // Dark Navy Enterprise
+      backgroundColor: AppColors.background,
       body: Stack(
         children: [
           // 1. Background Camera Preview (Pondasi AI)
@@ -31,12 +31,17 @@ class CalibrationView extends GetView<CalibrationController> {
 
           // 5. Back Button
           Positioned(
-            top: 50,
+            top: 16,
             left: 16,
-            child: IconButton(
-              onPressed: () => Get.back(),
-              icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
-              style: IconButton.styleFrom(backgroundColor: Colors.black26),
+            child: SafeArea(
+              child: IconButton(
+                onPressed: () => Get.back(),
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.primaryDark),
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  side: const BorderSide(color: AppColors.primaryDark, width: 2),
+                ),
+              ),
             ),
           ),
         ],
@@ -48,7 +53,7 @@ class CalibrationView extends GetView<CalibrationController> {
     return GetBuilder<CalibrationController>(
       builder: (controller) {
         if (controller.cameraController == null || !controller.cameraController!.value.isInitialized) {
-          return Container(color: Colors.black);
+          return Container(color: AppColors.background);
         }
         return SizedBox.expand(
           child: FittedBox(
@@ -73,8 +78,8 @@ class CalibrationView extends GetView<CalibrationController> {
           end: Alignment.bottomCenter,
           colors: [
             Colors.transparent,
-            const Color(0xFF0F172A).withAlpha(150),
-            const Color(0xFF0F172A),
+            AppColors.background.withAlpha(120),
+            AppColors.background,
           ],
         ),
       ),
@@ -100,17 +105,22 @@ class CalibrationView extends GetView<CalibrationController> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
                   decoration: BoxDecoration(
-                    color: isDetected ? const Color(0xFF1E293B).withAlpha(200) : Colors.red.shade900.withAlpha(200),
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(40),
                     border: Border.all(
-                      color: distance >= 30 ? AppColors.success : (isDetected ? Colors.orange : Colors.red), 
+                      color: distance >= 30 
+                          ? AppColors.primaryDark 
+                          : (isDetected ? Colors.orange : AppColors.danger), 
                       width: 4
                     ),
-                    boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 20)],
+                    boxShadow: const [BoxShadow(color: AppColors.primaryDark, offset: Offset(6, 6))],
                   ),
                   child: Text(
                     isDetected ? "${distance.toInt()} CM" : "MENCARI WAJAH...",
-                    style: AppTextStyles.heading1.copyWith(color: Colors.white, fontSize: 36),
+                    style: AppTextStyles.heading1.copyWith(
+                      color: AppColors.primaryDark, 
+                      fontSize: 36
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -119,7 +129,7 @@ class CalibrationView extends GetView<CalibrationController> {
                     ? "JARAK SUDAH IDEAL!" 
                     : (isDetected ? "TERLALU DEKAT! MUNDUR SEDIKIT" : "POSISIKAN WAJAH DI DEPAN KAMERA"),
                   style: AppTextStyles.bodyBold.copyWith(
-                    color: distance >= 30 ? Colors.greenAccent : Colors.white70,
+                    color: distance >= 30 ? Colors.green.shade700 : AppColors.primaryDark,
                     fontSize: 12,
                     letterSpacing: 1.2
                   ),
@@ -145,13 +155,13 @@ class CalibrationView extends GetView<CalibrationController> {
               label: "KUNCI JARAK AMAN",
               icon: Icons.lock_outline_rounded,
               isLoading: controller.isSaving.value,
-              onPressed: isTooClose ? () {} : () => controller.saveCalibration(),
+              onPressed: isTooClose ? null : () => controller.saveCalibration(),
             );
           }),
           const SizedBox(height: 20),
           Text(
             "Minimal jarak aman adalah 30 CM.",
-            style: AppTextStyles.caption.copyWith(color: Colors.white38),
+            style: AppTextStyles.caption.copyWith(color: AppColors.primaryDark.withAlpha(180)),
           ),
         ],
       ),

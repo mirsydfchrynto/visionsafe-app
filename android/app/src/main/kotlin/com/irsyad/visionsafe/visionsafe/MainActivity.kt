@@ -46,6 +46,23 @@ class MainActivity : FlutterActivity() {
                     requestOverlayPermission()
                     result.success(null)
                 }
+                "updateThreshold" -> {
+                    val threshold = call.argument<Double>("threshold") ?: 35.0
+                    val sharedPref = getSharedPreferences("VisionSafePrefs", Context.MODE_PRIVATE)
+                    sharedPref.edit().putFloat("threshold", threshold.toFloat()).apply()
+                    
+                    if (isServiceRunning(VisionService::class.java)) {
+                        val intent = Intent(this, VisionService::class.java).apply {
+                            putExtra("threshold", threshold)
+                        }
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                            startForegroundService(intent)
+                        } else {
+                            startService(intent)
+                        }
+                    }
+                    result.success(true)
+                }
                 else -> result.notImplemented()
             }
         }
@@ -87,7 +104,12 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun startVisionService() {
-        val intent = Intent(this, VisionService::class.java)
+        val sharedPref = getSharedPreferences("VisionSafePrefs", Context.MODE_PRIVATE)
+        val threshold = sharedPref.getFloat("threshold", 35.0f).toDouble()
+
+        val intent = Intent(this, VisionService::class.java).apply {
+            putExtra("threshold", threshold)
+        }
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             startForegroundService(intent)
         } else {
@@ -97,5 +119,10 @@ class MainActivity : FlutterActivity() {
 
     private fun stopVisionService() {
         stopService(Intent(this, VisionService::class.java))
+    }
+
+    override fun onDestroy() {
+        eventSink = null
+        super.onDestroy()
     }
 }

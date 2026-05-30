@@ -10,8 +10,8 @@ class ActionButton extends GetView<HomeController> {
   @override
   Widget build(BuildContext context) {
     return Obx(() => VButton(
-      label: controller.isServiceRunning.value ? "ISTIRAHAT DULU" : "AKTIFKAN VIZO!",
-      color: controller.isServiceRunning.value ? AppColors.charcoal : AppColors.primary,
+      label: controller.isServiceRunning ? "ISTIRAHAT DULU" : "AKTIFKAN VIZO!",
+      color: controller.isServiceRunning ? AppColors.charcoal : AppColors.primary,
       onPressed: controller.toggleService,
       isLoading: controller.isLoading.value,
     ));

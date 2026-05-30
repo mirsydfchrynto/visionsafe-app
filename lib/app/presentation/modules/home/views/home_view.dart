@@ -1,14 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/home_controller.dart';
-import 'widgets/live_vizo_radar.dart';
-import 'widgets/protection_status_card.dart';
-import 'widgets/quick_stats_grid.dart';
-import 'widgets/eye_care_news_card.dart';
+import 'package:visionsafe/app/presentation/global_widgets/organisms/live_vizo_radar.dart';
+import 'package:visionsafe/app/presentation/global_widgets/organisms/quick_stats_grid.dart';
+import 'package:visionsafe/app/presentation/global_widgets/molecules/eye_care_news_card.dart';
+import 'package:visionsafe/app/presentation/global_widgets/molecules/v_app_header.dart';
 import 'package:visionsafe/app/data/services/news_service.dart';
 import 'package:visionsafe/app/core/values/app_colors.dart';
 import 'package:visionsafe/app/core/values/app_text_styles.dart';
+import 'package:visionsafe/app/core/values/app_design.dart';
+import 'package:visionsafe/app/presentation/global_widgets/templates/base_screen_template.dart';
+import 'package:visionsafe/app/presentation/global_widgets/atoms/v_shimmer.dart';
+import 'package:visionsafe/app/presentation/global_widgets/molecules/v_empty_state.dart';
+import 'package:visionsafe/app/presentation/global_widgets/molecules/vizo_mascot.dart';
+import 'widgets/proximity_warning_overlay.dart';
+import 'widgets/compact_status_card.dart';
+import 'widgets/compact_action_button.dart';
+import 'package:visionsafe/app/presentation/global_widgets/animations/fade_in_up.dart';
 
+/// HomeView: The Hero Experience.
 class HomeView extends GetView<HomeController> {
   const HomeView({super.key});
 
@@ -16,144 +26,138 @@ class HomeView extends GetView<HomeController> {
   Widget build(BuildContext context) {
     final newsService = Get.find<NewsService>();
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: _buildAppBar(),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(24, 16, 24, 180), // Padding besar agar tidak tertutup nav
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Center(child: LiveVizoRadar()),
-                const SizedBox(height: 32),
-                
-                _buildSectionTitle("KONTROL UTAMA"),
-                _buildMainButton(),
-                
-                const SizedBox(height: 24),
-                _buildSectionTitle("STATUS PERLINDUNGAN"),
-                const ProtectionStatusCard(),
-                
-                const SizedBox(height: 24),
-                _buildSectionTitle("RINGKASAN HARI INI"),
-                const QuickStatsGrid(),
-                
-                const SizedBox(height: 24),
-                _buildSectionTitle("BERITA KESEHATAN REAL-TIME"),
-                Obx(() => newsService.isLoading.value 
-                  ? const Center(child: CircularProgressIndicator())
-                  : Column(
-                      children: newsService.newsList.map((news) => Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: EyeCareNewsCard(news: news),
-                      )).toList(),
-                    )
-                ),
-              ],
+    return Obx(() {
+      final isViolation = controller.isViolation;
+      
+      return BaseScreenTemplate(
+        appBar: const VAppHeader(title: "VISIONSAFE"),
+        bottomPadding: 160,
+        stackLayers: [
+          ProximityWarningOverlay(isViolation: isViolation),
+        ],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 12),
+            
+            // 2. Interactive Radar Assistant
+            FadeInUp(
+              delay: const Duration(milliseconds: 300),
+              child: const Center(child: RepaintBoundary(child: LiveVizoRadar())),
+            ),
+            
+            const SizedBox(height: 32),
+            
+            // 3. Quick Control Center
+            _buildAnimatedEntry(
+              delay: 450,
+              child: const Row(
+                children: [
+                  Expanded(child: CompactStatusCard()),
+                  SizedBox(width: AppDesign.space16),
+                  Expanded(child: CompactActionButton()),
+                ],
+              ),
+            ),
+            
+            const SizedBox(height: 16), // Reduced spacing
+            
+            // 4. Live Health Metrics
+            _buildAnimatedEntry(
+              delay: 600,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSectionTitle("RINGKASAN HARI INI"),
+                  const SizedBox(height: 8), // Tight spacing to grid
+                  const QuickStatsGrid(),
+                ],
+              ),
+            ),
+            
+            const SizedBox(height: 16), // Reduced spacing to news
+            
+            // 5. Intelligent Eye Care Content
+            _buildAnimatedEntry(
+              delay: 750,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildNewsHeader(),
+                  const SizedBox(height: 8), // Tight spacing to list
+                  _buildNewsList(newsService),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  Widget _buildNewsHeader() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        _buildSectionTitle("BERITA KESEHATAN"),
+        GestureDetector(
+          onTap: () => Get.toNamed('/news'),
+          child: Text(
+            "LIHAT SEMUA",
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.primary,
+              fontWeight: FontWeight.w900,
+              fontSize: 10,
+              letterSpacing: 1.0,
             ),
           ),
-        ],
-      ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNewsList(NewsService newsService) {
+    return Obx(() {
+      if (newsService.isLoading.value) {
+        return Column(
+          children: List.generate(2, (index) => const Padding(
+            padding: EdgeInsets.only(bottom: AppDesign.spaceM),
+            child: VShimmer(width: double.infinity, height: 110),
+          )),
+        );
+      }
+      if (newsService.newsList.isEmpty) {
+        return const VEmptyState(
+          title: "Kabar Dari Vizo",
+          description: "Vizo belum menemukan artikel baru hari ini. Ayo jaga kesehatan matamu!",
+          mascotState: VizoState.sleeping,
+        );
+      }
+      return Column(
+        children: newsService.newsList.take(3).map((news) => Padding(
+          padding: const EdgeInsets.only(bottom: AppDesign.spaceM),
+          child: EyeCareNewsCard(news: news),
+        )).toList(),
+      );
+    });
+  }
+
+  Widget _buildAnimatedEntry({required Widget child, int delay = 0}) {
+    return FadeInUp(
+      delay: Duration(milliseconds: delay),
+      child: child,
     );
   }
 
   Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 8),
-      child: Text(
-        title,
-        style: AppTextStyles.bodyBold.copyWith(
-          fontSize: 12,
-          color: const Color(0xFF003366).withAlpha(150),
-          letterSpacing: 1.5,
-        ),
+    return Text(
+      title,
+      style: AppTextStyles.caption.copyWith(
+        fontSize: 11,
+        color: AppColors.primaryDark,
+        fontWeight: FontWeight.w900,
+        letterSpacing: 2.0,
       ),
-    );
-  }
-
-  Widget _buildMainButton() {
-    return Obx(() => Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: (controller.isServiceRunning.value ? AppColors.danger : AppColors.success).withAlpha(80),
-            offset: const Offset(0, 8),
-            blurRadius: 15,
-          )
-        ],
-      ),
-      child: ElevatedButton(
-        onPressed: () => controller.toggleService(),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: controller.isServiceRunning.value ? AppColors.danger : AppColors.success,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30),
-            side: BorderSide(color: AppColors.charcoal, width: 4),
-          ),
-          elevation: 0,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              controller.isServiceRunning.value ? Icons.stop_circle_rounded : Icons.play_circle_filled_rounded,
-              size: 28,
-            ),
-            const SizedBox(width: 12),
-            Text(
-              controller.isServiceRunning.value ? "HENTIKAN PENJAGAAN" : "AKTIFKAN VIZO SEKARANG",
-              style: AppTextStyles.bodyBold.copyWith(letterSpacing: 2, fontSize: 14),
-            ),
-          ],
-        ),
-      ),
-    ));
-  }
-
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      title: Column(
-        children: [
-          Text('VISIONSAFE', style: AppTextStyles.heading2.copyWith(letterSpacing: 2, color: const Color(0xFF003366))),
-          Obx(() => Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: controller.isBackendConnected.value ? Colors.green : Colors.red,
-                ),
-              ),
-              const SizedBox(width: 4),
-              Text(
-                controller.isBackendConnected.value ? "SUPABASE: ONLINE" : "SUPABASE: OFFLINE",
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: (controller.isBackendConnected.value ? Colors.green : Colors.red).withAlpha(200),
-                ),
-              ),
-            ],
-          )),
-        ],
-      ),
-      centerTitle: true,
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.settings_suggest_rounded, color: Color(0xFF003366), size: 28),
-          onPressed: () => Get.toNamed('/settings'),
-        )
-      ],
     );
   }
 }

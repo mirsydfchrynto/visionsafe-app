@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:visionsafe/app/core/values/app_colors.dart';
 import 'package:visionsafe/app/core/values/app_text_styles.dart';
+import 'package:visionsafe/app/core/values/app_design.dart';
 
-/// Input field dengan gaya Retro 2D.
-/// Mendukung prefixIcon untuk estetika Hero Quest.
-class VInput extends StatelessWidget {
+/// VInput: AAA Quality Textfield.
+/// Featuring smooth focus transitions, premium border glow, and consistent tactile feedback.
+class VInput extends StatefulWidget {
   final String? label;
   final String hint;
   final bool isPassword;
@@ -23,30 +24,110 @@ class VInput extends StatelessWidget {
   });
 
   @override
+  State<VInput> createState() => _VInputState();
+}
+
+class _VInputState extends State<VInput> {
+  late FocusNode _focusNode;
+  bool _isFocused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode = FocusNode();
+    _focusNode.addListener(_onFocusChange);
+  }
+
+  void _onFocusChange() {
+    if (mounted) {
+      setState(() {
+        _isFocused = _focusNode.hasFocus;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _focusNode.removeListener(_onFocusChange);
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (label != null) ...[
-          Text(label!.toUpperCase(), style: AppTextStyles.caption.copyWith(color: AppColors.charcoal, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
+        if (widget.label != null) ...[
+          Text(
+            widget.label!.toUpperCase(),
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.primaryDark,
+              fontWeight: FontWeight.w900,
+              fontSize: 11,
+              letterSpacing: 1.5,
+            ),
+          ),
+          const SizedBox(height: AppDesign.space8),
         ],
-        Container(
+        AnimatedContainer(
+          duration: AppDesign.medium,
+          curve: AppDesign.smoothCurve,
           decoration: BoxDecoration(
-            color: AppColors.white,
-            borderRadius: BorderRadius.circular(30),
-            border: Border.all(color: AppColors.charcoal, width: 2.5),
+            color: Colors.white.withValues(alpha: 0.98),
+            borderRadius: BorderRadius.circular(AppDesign.radiusM),
+            border: Border.all(
+              color: _isFocused 
+                  ? AppColors.primary 
+                  : AppColors.primaryDark.withValues(alpha: 0.15),
+              width: _isFocused ? 2.5 : 2.0,
+            ),
+            boxShadow: [
+              if (_isFocused)
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.2),
+                  offset: const Offset(0, 4),
+                  blurRadius: 16.0,
+                  spreadRadius: 2.0,
+                )
+              else
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.03),
+                  offset: const Offset(0, 2),
+                  blurRadius: 4.0,
+                ),
+            ],
           ),
           child: TextField(
-            controller: controller,
-            obscureText: isPassword,
-            keyboardType: keyboardType,
-            style: AppTextStyles.bodyBold.copyWith(color: AppColors.charcoal),
+            focusNode: _focusNode,
+            controller: widget.controller,
+            obscureText: widget.isPassword,
+            keyboardType: widget.keyboardType,
+            style: AppTextStyles.bodyBold.copyWith(
+              color: AppColors.charcoal,
+              fontSize: 15,
+            ),
             decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: AppTextStyles.caption.copyWith(color: Colors.grey.shade400),
-              prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: Colors.grey.shade600, size: 22) : null,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+              hintText: widget.hint,
+              hintStyle: AppTextStyles.caption.copyWith(
+                color: AppColors.grey.withValues(alpha: 0.5),
+                fontWeight: FontWeight.w500,
+              ),
+              prefixIcon: widget.prefixIcon != null
+                  ? AnimatedScale(
+                      scale: _isFocused ? 1.1 : 1.0,
+                      duration: AppDesign.fast,
+                      child: Icon(
+                        widget.prefixIcon,
+                        color: _isFocused ? AppColors.primary : AppColors.primaryDark.withValues(alpha: 0.6),
+                        size: 22,
+                      ),
+                    )
+                  : null,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: AppDesign.space20,
+                vertical: AppDesign.space20,
+              ),
               border: InputBorder.none,
             ),
           ),

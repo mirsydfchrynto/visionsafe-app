@@ -11,7 +11,7 @@ class DistanceRadar extends GetView<HomeController> {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final isRunning = controller.isServiceRunning.value;
+      final isRunning = controller.isServiceRunning;
       if (!isRunning) return _buildIdleState();
 
       final distance = controller.telemetryService.currentDistance.value;
@@ -29,7 +29,16 @@ class DistanceRadar extends GetView<HomeController> {
         child: Stack(
           alignment: Alignment.center,
           children: [
-            VizoMascot(state: isViolation ? VizoState.worried : VizoState.idle),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              transitionBuilder: (Widget child, Animation<double> animation) {
+                return ScaleTransition(scale: animation, child: child);
+              },
+              child: VizoMascot(
+                key: ValueKey(isViolation ? VizoState.worried : VizoState.idle),
+                state: isViolation ? VizoState.worried : VizoState.idle,
+              ),
+            ),
             _buildDistanceIndicator(distance, isViolation),
           ],
         ),

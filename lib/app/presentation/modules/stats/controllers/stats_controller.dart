@@ -2,11 +2,14 @@ import 'package:get/get.dart';
 import 'package:visionsafe/app/data/services/reward_service.dart';
 import 'package:visionsafe/app/data/services/supabase_service.dart';
 import 'package:visionsafe/app/data/models/sticker_model.dart';
+import 'package:visionsafe/app/data/repositories/profile_repository.dart';
+import 'package:visionsafe/app/data/models/profile_model.dart';
 
 /// StatsController: Logika pengelolaan data statistik dan analitik cloud.
 class StatsController extends GetxController {
   final _rewardService = Get.find<RewardService>();
   final _supabaseService = Get.find<SupabaseService>();
+  final _profileRepo = Get.find<ProfileRepository>();
 
   final healthScore = 100.obs;
   final weeklyData = <double>[0, 0, 0, 0, 0, 0, 0].obs;
@@ -15,6 +18,7 @@ class StatsController extends GetxController {
 
   final hourlyViolations = List<double>.filled(24, 0.0).obs;
   final stickers = <StickerModel>[].obs;
+  final leaderboard = <ProfileModel>[].obs;
   final isLoading = false.obs;
 
   @override
@@ -22,6 +26,16 @@ class StatsController extends GetxController {
     super.onInit();
     _loadStickers();
     fetchCloudAnalytics();
+    fetchLeaderboard();
+  }
+
+  Future<void> fetchLeaderboard() async {
+    try {
+      final data = await _profileRepo.getLeaderboard();
+      leaderboard.assignAll(data);
+    } catch (e) {
+      Get.log("Gagal fetch leaderboard: $e");
+    }
   }
 
   void _loadStickers() {

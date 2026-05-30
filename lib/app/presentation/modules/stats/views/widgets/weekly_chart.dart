@@ -36,7 +36,8 @@ class WeeklyChart extends GetView<StatsController> {
                 _buildBar("SEL", 0.7, AppColors.success),
                 _buildBar("RAB", 0.9, AppColors.danger),
                 _buildBar("KAM", 0.5, AppColors.primary),
-                _buildBar("JUM", 0.8, AppColors.accent),
+                _buildBar("JUM", 0.8, AppColors.secondary),
+
                 _buildBar("SAB", 0.6, Colors.orange),
                 _buildBar("MIN", 0.3, AppColors.success),
               ],

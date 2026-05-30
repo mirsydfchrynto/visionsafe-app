@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:visionsafe/app/presentation/global_widgets/atoms/v_card.dart';
 import 'package:visionsafe/app/core/values/app_text_styles.dart';
+import 'package:visionsafe/app/presentation/global_widgets/molecules/v_toast.dart';
+import 'package:visionsafe/app/presentation/global_widgets/molecules/vizo_mascot.dart';
 
 /// PlayCard: Kartu pilihan game/edukasi dengan thumbnail ikon besar.
 class PlayCard extends StatelessWidget {
@@ -16,10 +18,10 @@ class PlayCard extends StatelessWidget {
         if (game['route'] != null) {
           Get.toNamed(game['route'] as String);
         } else {
-          Get.snackbar(
+          VToast.show(
             "Segera Hadir!",
             "Fitur ${game['title']} sedang dalam tahap pengembangan.",
-            snackPosition: SnackPosition.BOTTOM,
+            state: VizoState.sleeping,
           );
         }
       },

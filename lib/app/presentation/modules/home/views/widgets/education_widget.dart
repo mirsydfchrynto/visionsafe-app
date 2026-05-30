@@ -9,7 +9,7 @@ class EducationWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return VCard(
-      color: AppColors.accent,
+      color: AppColors.secondary,
       child: Row(
         children: [
           const Icon(Icons.lightbulb_outline_rounded, color: Colors.white, size: 32),

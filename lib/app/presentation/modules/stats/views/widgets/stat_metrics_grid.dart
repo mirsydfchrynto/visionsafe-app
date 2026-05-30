@@ -49,14 +49,12 @@ class StatMetricsGrid extends GetView<StatsController> {
           Text(label, style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w900, fontSize: 10, color: AppColors.charcoal.withAlpha(150))),
           const SizedBox(height: 4),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
             children: [
               Text(value, style: AppTextStyles.heading1.copyWith(fontSize: 28, height: 1, color: AppColors.charcoal)),
               const SizedBox(width: 4),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(unit, style: AppTextStyles.caption.copyWith(fontSize: 10, fontWeight: FontWeight.bold)),
-              ),
+              Text(unit, style: AppTextStyles.caption.copyWith(fontSize: 10, fontWeight: FontWeight.bold)),
             ],
           ),
         ],

@@ -9,7 +9,7 @@ class DistanceMeter extends GetView<HomeController> {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      if (!controller.isServiceRunning.value) return const SizedBox.shrink();
+      if (!controller.isServiceRunning) return const SizedBox.shrink();
 
       final distance = controller.telemetryService.currentDistance.value;
       final isViolation = controller.telemetryService.isViolation.value;

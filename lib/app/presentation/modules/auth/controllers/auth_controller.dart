@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:visionsafe/app/routes/app_pages.dart';
 import 'package:visionsafe/app/data/repositories/auth_repository.dart';
+import 'package:visionsafe/app/presentation/global_widgets/molecules/v_toast.dart';
+import 'package:visionsafe/app/presentation/global_widgets/molecules/vizo_mascot.dart';
 
 /// Controller untuk manajemen state dan logika UI Autentikasi.
 class AuthController extends GetxController {
-  final _authRepository = AuthRepository();
+  final _authRepository = Get.find<AuthRepository>();
   final isLoading = false.obs;
   
   late TextEditingController nameController;
@@ -33,11 +35,11 @@ class AuthController extends GetxController {
     isLoading.value = true;
     try {
       await _authRepository.login(emailController.text.trim(), passwordController.text.trim());
-      Get.offAllNamed(Routes.mainWrapper);
+      _safeOffAll(Routes.mainWrapper);
     } catch (e) {
-      Get.snackbar("Kesalahan Login", "Email atau password salah.");
+      VToast.show("Kesalahan Login", "Email atau password salah.", state: VizoState.worried);
     } finally {
-      isLoading.value = false;
+      if (!_isDisposed) isLoading.value = false;
     }
   }
 
@@ -53,12 +55,12 @@ class AuthController extends GetxController {
         name: nameController.text.trim(),
       );
       
-      Get.snackbar("Selamat Datang!", "Akun Hero kamu berhasil dibuat. Silakan login.");
-      Get.offAllNamed(Routes.login);
+      VToast.show("Selamat Datang!", "Akun Hero kamu berhasil dibuat. Silakan login.", state: VizoState.happy);
+      _safeOffAll(Routes.login);
     } catch (e) {
-      Get.snackbar("Gagal Daftar", "Email mungkin sudah digunakan atau jaringan bermasalah.");
+      VToast.show("Gagal Daftar", "Email mungkin sudah digunakan atau jaringan bermasalah.", state: VizoState.intervention);
     } finally {
-      isLoading.value = false;
+      if (!_isDisposed) isLoading.value = false;
     }
   }
 
@@ -67,17 +69,17 @@ class AuthController extends GetxController {
     isLoading.value = true;
     try {
       await _authRepository.loginWithGoogle();
-      Get.offAllNamed(Routes.mainWrapper);
+      _safeOffAll(Routes.mainWrapper);
     } catch (e) {
-      Get.snackbar("Kesalahan Google Auth", "Gagal masuk dengan Google.");
+      VToast.show("Kesalahan Google Auth", "Gagal masuk dengan Google.", state: VizoState.worried);
     } finally {
-      isLoading.value = false;
+      if (!_isDisposed) isLoading.value = false;
     }
   }
 
   bool _validateLoginInput() {
     if (emailController.text.isEmpty || passwordController.text.isEmpty) {
-      Get.snackbar("Input Tidak Valid", "Mohon isi email dan password.");
+      VToast.show("Input Tidak Valid", "Mohon isi email dan password.", state: VizoState.worried);
       return false;
     }
     return true;
@@ -85,26 +87,33 @@ class AuthController extends GetxController {
 
   bool _validateRegisterInput() {
     if (nameController.text.isEmpty || emailController.text.isEmpty || passwordController.text.isEmpty) {
-      Get.snackbar("Input Kosong", "Semua kolom wajib diisi.");
+      VToast.show("Input Kosong", "Semua kolom wajib diisi.", state: VizoState.worried);
       return false;
     }
     if (passwordController.text != confirmPasswordController.text) {
-      Get.snackbar("Password Berbeda", "Konfirmasi password tidak cocok.");
+      VToast.show("Password Berbeda", "Konfirmasi password tidak cocok.", state: VizoState.sad);
       return false;
     }
     if (passwordController.text.length < 6) {
-      Get.snackbar("Password Lemah", "Minimal 6 karakter ya Hero!");
+      VToast.show("Password Lemah", "Minimal 6 karakter ya Hero!", state: VizoState.worried);
       return false;
     }
     return true;
   }
 
+  bool _isDisposed = false;
+
   @override
   void onClose() {
+    _isDisposed = true;
     nameController.dispose();
     emailController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();
     super.onClose();
+  }
+
+  void _safeOffAll(String route) {
+    if (!_isDisposed) Get.offAllNamed(route);
   }
 }

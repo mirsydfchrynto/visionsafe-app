@@ -3,32 +3,38 @@ import 'package:get/get.dart';
 import '../controllers/onboarding_controller.dart';
 import 'widgets/onboarding_content.dart';
 import 'widgets/onboarding_nav.dart';
-import 'package:visionsafe/app/core/values/app_colors.dart';
+import 'package:visionsafe/app/core/values/app_design.dart';
+import 'package:visionsafe/app/presentation/global_widgets/molecules/v_immersive_background.dart';
 
-/// OnboardingView: Layar pengenalan untuk anak-anak.
-/// Mematuhi aturan Micro-File & Modular UI.
+/// OnboardingView: Premium child-friendly introduction.
 class OnboardingView extends GetView<OnboardingController> {
   const OnboardingView({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: PageView.builder(
-                controller: controller.pageController,
-                onPageChanged: controller.updatePageIndex,
-                itemCount: controller.pages.length,
-                itemBuilder: (context, index) {
-                  return OnboardingContent(page: controller.pages[index]);
-                },
+      body: VImmersiveBackground(
+        child: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: PageView.builder(
+                  controller: controller.pageController,
+                  physics: const BouncingScrollPhysics(),
+                  onPageChanged: controller.updatePageIndex,
+                  itemCount: controller.pages.length,
+                  itemBuilder: (context, index) {
+                    return OnboardingContent(page: controller.pages[index]);
+                  },
+                ),
               ),
-            ),
-            const OnboardingNav(),
-          ],
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: AppDesign.spaceL),
+                child: OnboardingNav(),
+              ),
+              const SizedBox(height: AppDesign.spaceXL),
+            ],
+          ),
         ),
       ),
     );

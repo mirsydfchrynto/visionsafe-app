@@ -21,14 +21,23 @@ import '../presentation/modules/quests/bindings/quests_binding.dart';
 import '../presentation/modules/stats/bindings/stats_binding.dart';
 import '../presentation/modules/play/bindings/play_binding.dart';
 
+import '../presentation/modules/splash/views/splash_view.dart';
+import '../presentation/modules/news/views/news_list_view.dart';
+import '../presentation/modules/news/views/news_detail_view.dart';
+import '../presentation/modules/news/bindings/news_binding.dart';
+
 part 'app_routes.dart';
 
 class AppPages {
   AppPages._();
 
-  static const initial = Routes.onboarding;
+  static const initial = Routes.splash;
 
   static final routes = [
+    GetPage(
+      name: _Paths.splash,
+      page: () => const SplashView(),
+    ),
     GetPage(
       name: _Paths.mainWrapper, 
       page: () => const MainWrapperView(), 
@@ -83,5 +92,15 @@ class AppPages {
       page: () => const QuestsView(),
       binding: QuestsBinding(),
     ),
+    GetPage(
+      name: _Paths.news,
+      page: () => const NewsListView(),
+      binding: NewsBinding(),
+    ),
+    GetPage(
+      name: _Paths.newsDetail,
+      page: () => const NewsDetailView(),
+    ),
   ];
 }
+

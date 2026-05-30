@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:visionsafe/app/data/services/reward_service.dart';
 import 'package:visionsafe/app/data/models/sticker_model.dart';
+import 'package:visionsafe/app/presentation/global_widgets/molecules/v_toast.dart';
+import 'package:visionsafe/app/presentation/global_widgets/molecules/vizo_mascot.dart';
 
 class QuestsController extends GetxController {
   final _rewardService = Get.find<RewardService>();
@@ -60,11 +62,10 @@ class QuestsController extends GetxController {
       return;
     }
     
-    Get.snackbar(
+    VToast.show(
       "Quest Activated", 
       "Challenge started! Keep focusing on your eye health.",
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: const Color(0xFF003366).withAlpha(50),
+      state: VizoState.happy,
     );
   }
 }

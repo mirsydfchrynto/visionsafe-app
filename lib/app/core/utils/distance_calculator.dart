@@ -6,9 +6,8 @@ class DistanceCalculator {
   // IPD Rata-rata manusia (6.3 cm)
   static const double realIpdCm = 6.3;
   
-  // Focal Length (Asumsi standar pixel focal length kamera depan)
-  // Nilai ini didapat dari kalibrasi (RealDistance * PixelIPD / RealIPD)
-  static const double focalLengthPixels = 850.0;
+  // Focal Length (Hasil kalibrasi sensor kamera standar)
+  static const double focalLengthPixels = 820.0;
 
   /// Menghitung estimasi jarak (cm) berdasarkan jarak antar mata di layar (pixels).
   /// Rumus: (Real IPD * Focal Length) / Pixel IPD

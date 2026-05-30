@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:get/get.dart';
 import 'package:visionsafe/app/data/services/reward_service.dart';
 import 'package:hive/hive.dart';
+import 'package:visionsafe/app/presentation/global_widgets/molecules/v_toast.dart';
+import 'package:visionsafe/app/presentation/global_widgets/molecules/vizo_mascot.dart';
 
 class EyeExerciseController extends GetxController {
   final _rewardService = Get.find<RewardService>();
@@ -69,14 +71,16 @@ class EyeExerciseController extends GetxController {
     await box.put('completed_count', count);
     
     if (count >= 5) {
-      _rewardService.unlockSticker('s4');
+      await _rewardService.unlockSticker('s4');
     }
 
-    Get.back();
-    Get.snackbar(
+    if (Get.currentRoute == '/eye-exercise') {
+      Get.back();
+    }
+    VToast.show(
       "Hebat!",
       "Kamu telah menyelesaikan senam mata. Matamu sekarang lebih segar!",
-      snackPosition: SnackPosition.BOTTOM,
+      state: VizoState.happy,
     );
   }
 

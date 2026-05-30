@@ -5,6 +5,7 @@ import 'package:visionsafe/app/presentation/global_widgets/atoms/v_button.dart';
 import 'package:visionsafe/app/presentation/global_widgets/molecules/vizo_mascot.dart';
 import 'package:visionsafe/app/core/values/app_colors.dart';
 import 'package:visionsafe/app/core/values/app_text_styles.dart';
+import 'package:visionsafe/app/presentation/global_widgets/templates/base_screen_template.dart';
 
 class EyeExerciseView extends GetView<EyeExerciseController> {
   const EyeExerciseView({super.key});
@@ -12,16 +13,18 @@ class EyeExerciseView extends GetView<EyeExerciseController> {
   
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return BaseScreenTemplate(
       appBar: AppBar(
         title: Text('SENAM MATA', style: AppTextStyles.heading2),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.primaryDark),
+          onPressed: () => Get.back(),
+        ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(32.0),
+      child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -11,6 +12,7 @@ class AuthService extends GetxService {
   final SupabaseClient _supabase = Supabase.instance.client;
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
   final Logger _logger = Logger();
+  StreamSubscription<AuthState>? _authSubscription;
 
   // Web Client ID (Wajib untuk handshake Google <-> Supabase)
   final String _webClientId = '353922058441-j4voev2ai15av984u7sgmd4ba78248b3.apps.googleusercontent.com';
@@ -24,14 +26,29 @@ class AuthService extends GetxService {
   @override
   void onInit() {
     super.onInit();
+    _checkInitialSession();
     _listenToAuthState();
   }
 
+  void _checkInitialSession() {
+    final session = _supabase.auth.currentSession;
+    final user = session?.user;
+    currentUser.value = user;
+    isLoggedIn.value = user != null;
+    if (user != null) {
+      _logger.i('Sesi ditemukan: ${user.email}');
+    }
+  }
+
   void _listenToAuthState() {
-    _supabase.auth.onAuthStateChange.listen((data) {
+    _authSubscription = _supabase.auth.onAuthStateChange.listen((data) {
       final user = data.session?.user;
+      
+      // Update reaktif state
       currentUser.value = user;
       isLoggedIn.value = user != null;
+      
+      _logger.d('Auth State Change: ${data.event.name} - User: ${user?.email}');
     });
   }
 
@@ -97,10 +114,66 @@ class AuthService extends GetxService {
     }
   }
 
+  /// Memperbarui metadata profil di Auth dan menyinkronkan ke tabel 'profiles'.
+  Future<void> updateProfile({required String fullName, String? avatarUrl}) async {
+    try {
+      final user = _supabase.auth.currentUser;
+      if (user == null) throw 'User belum terautentikasi.';
+
+      // 1. Update Auth Metadata
+      await _supabase.auth.updateUser(
+        UserAttributes(
+          data: {
+            'full_name': fullName,
+            // ignore: use_null_aware_elements
+            if (avatarUrl != null) 'avatar_url': avatarUrl,
+          },
+        ),
+      );
+
+      // 2. Sync ke tabel public.profiles (Diizinkan RLS column-level grant)
+      await _supabase.from('profiles').update({
+        'full_name': fullName,
+        // ignore: use_null_aware_elements
+        if (avatarUrl != null) 'avatar_url': avatarUrl,
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', user.id);
+
+      _logger.i('Profil berhasil diperbarui: $fullName');
+    } catch (e) {
+      _logger.e('Gagal memperbarui profil: $e');
+      rethrow;
+    }
+  }
+
+  /// Memperbarui password user aktif secara aman di Supabase Auth.
+  Future<void> changePassword(String newPassword) async {
+    try {
+      await _supabase.auth.updateUser(
+        UserAttributes(password: newPassword),
+      );
+      _logger.i('Password berhasil diperbarui.');
+    } catch (e) {
+      _logger.e('Gagal memperbarui password: $e');
+      rethrow;
+    }
+  }
+
   Future<void> signOut() async {
-    await _supabase.auth.signOut();
-    _logger.i('Sesi Berakhir: User Logged Out');
+    try {
+      await _supabase.auth.signOut();
+      await _secureStorage.delete(key: 'saved_email');
+      _logger.i('Sesi Berakhir: User Logged Out');
+    } catch (e) {
+      _logger.e('Gagal Logout: $e');
+    }
   }
 
   String? get currentUserId => _supabase.auth.currentUser?.id;
+
+  @override
+  void onClose() {
+    _authSubscription?.cancel();
+    super.onClose();
+  }
 }

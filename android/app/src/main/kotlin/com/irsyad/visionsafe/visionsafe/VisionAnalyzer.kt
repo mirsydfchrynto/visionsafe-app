@@ -6,12 +6,12 @@ import android.graphics.Matrix
 import android.util.Log
 import androidx.camera.core.ImageProxy
 import com.google.mediapipe.framework.image.BitmapImageBuilder
+import com.google.mediapipe.tasks.components.containers.Category
 import com.google.mediapipe.tasks.vision.core.RunningMode
 import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarker
 import java.nio.ByteBuffer
 import kotlin.math.pow
 import kotlin.math.sqrt
-
 import kotlin.math.*
 
 /**
@@ -46,6 +46,7 @@ class VisionAnalyzer(private val context: Context) {
                 .setBaseOptions(baseOptions)
                 .setRunningMode(RunningMode.IMAGE)
                 .setNumFaces(1)
+                .setOutputFaceBlendshapes(true) // Aktifkan untuk Deteksi Kedipan (Blink)
                 .build()
             
             faceLandmarker = FaceLandmarker.createFromOptions(context, options)
@@ -64,14 +65,16 @@ class VisionAnalyzer(private val context: Context) {
             val options = FaceLandmarker.FaceLandmarkerOptions.builder()
                 .setBaseOptions(baseOptions)
                 .setRunningMode(RunningMode.IMAGE)
-                .setNumFaces(1).build()
+                .setNumFaces(1)
+                .setOutputFaceBlendshapes(true)
+                .build()
             faceLandmarker = FaceLandmarker.createFromOptions(context, options)
         } catch (e: Exception) {
             Log.e("VisionSafe", "Critical AI Error", e)
         }
     }
 
-    fun analyze(imageProxy: ImageProxy): Double? {
+    fun analyze(imageProxy: ImageProxy): AnalysisResult? {
         if (faceLandmarker == null) return null
 
         val bitmap = imageProxy.toBitmapOptimized()
@@ -99,16 +102,40 @@ class VisionAnalyzer(private val context: Context) {
             if (lastDistance == 0.0) lastDistance = rawDistance
             lastDistance = (rawDistance * SMOOTHING_FACTOR) + (lastDistance * (1.0 - SMOOTHING_FACTOR))
             
-            return lastDistance
+            // 5. Deteksi Kedipan (Blink) via Blendshapes
+            // Menggunakan iterasi eksplisit untuk menghindari masalah resolusi referensi Kotlin
+            var isBlinking = false
+            val blendshapesOptional = result.faceBlendshapes()
+            if (blendshapesOptional.isPresent) {
+                val blendshapesList = blendshapesOptional.get()
+                if (blendshapesList.isNotEmpty()) {
+                    val firstFaceCategories = blendshapesList[0] as? List<Category>
+                    if (firstFaceCategories != null) {
+                        for (category in firstFaceCategories) {
+                            val name = category.categoryName()
+                            val score = category.score()
+                            if (name == "eyeBlinkLeft" || name == "eyeBlinkRight") {
+                                if (score > 0.35f) { // Sensitivitas sedikit ditingkatkan
+                                    isBlinking = true
+                                    break
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            return AnalysisResult(lastDistance, isBlinking)
         }
         return null
     }
+
+    data class AnalysisResult(val distance: Double, val isBlinking: Boolean)
 
     private fun ImageProxy.toBitmapOptimized(): Bitmap {
         val buffer = planes[0].buffer
         buffer.rewind()
         
-        // Optimasi: Reuse bitmap jika ukuran masih sama
         if (reusableBitmap == null || reusableBitmap!!.width != width || reusableBitmap!!.height != height) {
             reusableBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         }
@@ -120,8 +147,6 @@ class VisionAnalyzer(private val context: Context) {
                 postRotate(imageInfo.rotationDegrees.toFloat())
                 postScale(-1f, 1f, width / 2f, height / 2f)
             }
-            // Catatan: Bitmap.createBitmap tetap alokasi baru jika ada matrix/rotasi.
-            // Namun setidaknya buffer awal sudah diproses lebih efisien.
             return Bitmap.createBitmap(reusableBitmap!!, 0, 0, width, height, matrix, true)
         }
         return reusableBitmap!!

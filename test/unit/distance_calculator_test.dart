@@ -5,9 +5,9 @@ import 'package:visionsafe/app/core/utils/distance_calculator.dart';
 void main() {
   group('DistanceCalculator Tests', () {
     test('Kalkulasi jarak harus akurat berdasarkan rumus Triangle Similarity', () {
-      // Skenario: Jika Pixel IPD adalah 178.5 pixels
-      // (6.3 * 850) / 178.5 = 30.0 cm
-      const double mockPixelIpd = 178.5;
+      // Skenario: Jika Pixel IPD adalah 172.2 pixels
+      // (6.3 * 820) / 172.2 = 30.0 cm
+      const double mockPixelIpd = 172.2;
       final distance = DistanceCalculator.calculateDistance(mockPixelIpd);
       
       expect(distance, closeTo(30.0, 0.1));

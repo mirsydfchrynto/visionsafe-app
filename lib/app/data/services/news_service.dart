@@ -1,89 +1,172 @@
 import 'package:get/get.dart';
 import 'package:logger/logger.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:dio/dio.dart';
+import 'package:visionsafe/app/data/models/news_model.dart';
+import 'package:visionsafe/app/data/services/rss_parser.dart';
 
-class NewsModel {
-  final String id;
-  final String title;
-  final String description;
-  final String imageUrl;
-  final String category;
-  final String url;
-  final DateTime publishedAt;
-
-  NewsModel({
-    required this.id,
-    required this.title,
-    required this.description,
-    required this.imageUrl,
-    required this.category,
-    required this.url,
-    required this.publishedAt,
-  });
-
-  factory NewsModel.fromMap(Map<String, dynamic> map) {
-    return NewsModel(
-      id: map['id'] ?? '',
-      title: map['title'] ?? '',
-      description: map['description'] ?? '',
-      imageUrl: map['image_url'] ?? '',
-      category: map['category'] ?? 'Edukasi',
-      url: map['url'] ?? 'https://www.who.int/news-room/questions-and-answers/item/blindness-and-vision-impairment',
-      publishedAt: DateTime.parse(map['published_at'] ?? DateTime.now().toIso8601String()),
-    );
-  }
-}
+export 'package:visionsafe/app/data/models/news_model.dart';
 
 class NewsService extends GetxService {
   final newsList = <NewsModel>[].obs;
   final isLoading = false.obs;
+  final isOffline = false.obs;
+  
   final _logger = Logger();
+  final _supabase = Supabase.instance.client;
+  final _dio = Dio(BaseOptions(
+    connectTimeout: const Duration(seconds: 8),
+    receiveTimeout: const Duration(seconds: 8),
+  ));
+  late Box _newsBox;
+  DateTime? _lastFetchTime;
+
+  final List<Map<String, String>> _sources = [
+    {'name': 'WHO', 'url': 'https://www.who.int/feeds/entity/mediacentre/news/en/rss.xml'},
+    {'name': 'CDC', 'url': 'https://www.cdc.gov/xml/syndication.rss'},
+    {'name': 'NIH', 'url': 'https://newsinhealth.nih.gov/feed'},
+    {'name': 'Mayo Clinic', 'url': 'https://www.mayoclinic.org/rss/all-news-and-publications'},
+    {'name': 'Cleveland Clinic', 'url': 'https://health.clevelandclinic.org/feed'},
+    {'name': 'Harvard Health', 'url': 'https://www.health.harvard.edu/blog/feed'},
+    {'name': 'Medical News Today', 'url': 'https://www.medicalnewstoday.com/feed'},
+  ];
 
   Future<NewsService> init() async {
-    await fetchNews();
+    _newsBox = await Hive.openBox('news_cache');
+    _loadCachedNews();
+    
+    // Non-blocking background fetch
+    // ignore: unawaited_futures
+    fetchNews();
+    
     return this;
   }
 
-  Future<void> fetchNews() async {
-    isLoading.value = true;
+  void _loadCachedNews() {
     try {
-      // Simulasi real-time fetching (Dapat dihubungkan ke API News atau Supabase)
-      await Future.delayed(const Duration(seconds: 1));
-      
-      final mockData = [
-        {
-          'id': '1',
-          'title': 'Pentingnya Aturan 20-20-20',
-          'description': 'Langkah sederhana menjaga kesehatan mata saat belajar online dengan HP.',
-          'image_url': 'https://images.unsplash.com/photo-1516733725897-1aa73b87c8e8?w=500',
-          'category': 'Edukasi',
-          'url': 'https://www.healthline.com/health/eye-health/20-20-20-rule',
-          'published_at': DateTime.now().toIso8601String(),
-        },
-        {
-          'id': '2',
-          'title': 'Bahaya Gadget di Tempat Gelap',
-          'description': 'Kenapa kamu tidak boleh main HP sambil mematikan lampu kamar?',
-          'image_url': 'https://images.unsplash.com/photo-1541178735423-479332dfa93b?w=500',
-          'category': 'Tips Sehat',
-          'url': 'https://www.sleepfoundation.org/bedroom-environment/blue-light',
-          'published_at': DateTime.now().subtract(const Duration(days: 1)).toIso8601String(),
-        },
-        {
-          'id': '3',
-          'title': 'Makanan Peningkat Penglihatan',
-          'description': 'Wortel bukan satu-satunya! Cek daftar makanan enak untuk mata kuat.',
-          'image_url': 'https://images.unsplash.com/photo-1584447128309-b66b7a4d1b63?w=500',
-          'category': 'Nutrisi',
-          'url': 'https://www.aao.org/eye-health/tips-prevention/diet-nutrition',
-          'published_at': DateTime.now().subtract(const Duration(days: 2)).toIso8601String(),
-        }
-      ];
-
-      newsList.assignAll(mockData.map((e) => NewsModel.fromMap(e)).toList());
+      final cached = _newsBox.get('items');
+      if (cached != null && cached is List) {
+        final mapped = cached
+            .map((e) => NewsModel.fromMap(Map<String, dynamic>.from(e as Map)))
+            .toList();
+        newsList.assignAll(mapped);
+        _logger.i("Berita dimuat dari cache lokal: ${newsList.length} item.");
+      }
     } catch (e) {
-      _logger.e("Gagal fetch berita: $e");
-    } finally {
-      isLoading.value = false;
+      _logger.w("Gagal memuat berita dari cache: $e");
     }
   }
+
+  Future<void> fetchNews({bool force = false}) async {
+    // Throttling: fetch maximum once per 10 minutes unless forced
+    if (!force && _lastFetchTime != null && 
+        DateTime.now().difference(_lastFetchTime!) < const Duration(minutes: 10)) {
+      _logger.d("Fetch berita dilewati (throttled).");
+      return;
+    }
+
+    isLoading.value = true;
+    final List<NewsModel> allFetched = [];
+    final Set<String> titles = {};
+    final Set<String> urls = {};
+
+    // 0. Add Elite VisionSafe Fallback Articles (Hero Originals)
+    final fallbackNews = [
+      NewsModel(
+        id: 'vs_original_1',
+        title: 'Mengenal Aturan 20-20-20 untuk Kesehatan Mata',
+        description: 'Setiap 20 menit menatap layar, lihatlah objek sejauh 20 kaki (6 meter) selama 20 detik. Teknik ini sangat efektif mengurangi ketegangan mata digital.',
+        category: 'TIPS HERO',
+        url: 'https://visionsafe.id/edu/20-20-20',
+        publishedAt: DateTime.now(),
+        sourceName: 'VisionSafe HQ',
+      ),
+      NewsModel(
+        id: 'vs_original_2',
+        title: 'Jarak Aman Mata: Mengapa 30cm Sangat Penting?',
+        description: 'Menjaga jarak minimal 30cm dari layar membantu otot mata bekerja lebih rileks dan mencegah perkembangan miopi (mata minus) secara dini.',
+        category: 'EDUKASI',
+        url: 'https://visionsafe.id/edu/safe-distance',
+        publishedAt: DateTime.now().subtract(const Duration(hours: 1)),
+        sourceName: 'VisionSafe HQ',
+      ),
+      NewsModel(
+        id: 'vs_original_3',
+        title: 'Pentingnya Kedipan Mata Saat Menatap Layar',
+        description: 'Saat serius menatap layar, frekuensi berkedip manusia turun hingga 60%. Ini menyebabkan mata kering dan iritasi. Hero, jangan lupa berkedip!',
+        category: 'EDUKASI',
+        url: 'https://visionsafe.id/edu/blink-importance',
+        publishedAt: DateTime.now().subtract(const Duration(hours: 2)),
+        sourceName: 'VisionSafe HQ',
+      ),
+    ];
+
+    for (final news in fallbackNews) {
+      titles.add(news.title.toLowerCase().trim());
+      urls.add(news.url.trim());
+      allFetched.add(news);
+    }
+
+    // 1. Fetch from Supabase
+    try {
+      final response = await _supabase
+          .from('news')
+          .select()
+          .order('created_at', ascending: false)
+          .limit(20);
+      
+      if (response.isNotEmpty) {
+        final parsed = response.map((e) => NewsModel.fromMap(Map<String, dynamic>.from(e as Map))).toList();
+        for (final item in parsed) {
+          if (titles.add(item.title.toLowerCase().trim()) && urls.add(item.url.trim())) {
+            allFetched.add(item);
+          }
+        }
+      }
+      isOffline.value = false;
+    } catch (e) {
+      _logger.w("Supabase news fetch failed: $e");
+      isOffline.value = true;
+    }
+
+    // 2. Fetch from RSS Feeds in parallel with higher resilience
+    final List<Future<void>> rssFutures = _sources.map((src) async {
+      try {
+        final res = await _dio.get(src['url']!);
+        if (res.statusCode == 200 && res.data != null) {
+          final parsed = RssParser.parse(res.data.toString(), src['name']!);
+          for (final item in parsed) {
+            if (titles.add(item.title.toLowerCase().trim()) && urls.add(item.url.trim())) {
+              allFetched.add(item);
+            }
+          }
+        }
+      } catch (e) {
+        // Silent fail for individual RSS sources to keep it professional
+      }
+    }).toList();
+
+    await Future.wait(rssFutures);
+
+    if (allFetched.isNotEmpty) {
+      // Sort: newest first
+      allFetched.sort((a, b) => b.publishedAt.compareTo(a.publishedAt));
+      
+      // Limit total stored list to 50 items to keep local storage lightweight
+      final finalArticles = allFetched.take(50).toList();
+      newsList.assignAll(finalArticles);
+
+      // Save to Hive cache
+      final maps = finalArticles.map((e) => e.toMap()).toList();
+      await _newsBox.put('items', maps);
+      
+      _lastFetchTime = DateTime.now();
+      isOffline.value = false;
+      _logger.i("News update completed: ${newsList.length} total items.");
+    }
+    
+    isLoading.value = false;
+  }
 }
+
